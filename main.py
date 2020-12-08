@@ -11,7 +11,7 @@ class ImageWidget(QWidget):
         super(ImageWidget,self).__init__(parent)
         w=surface.get_width()
         h=surface.get_height()
-        self.data=surface.get_buffer().raw
+        self.data=surface.get_buffer()
         self.image=QtGui.QImage(self.data,w,h,QtGui.QImage.Format_RGB32)
 
     def paintEvent(self,event):
