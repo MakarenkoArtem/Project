@@ -10,7 +10,7 @@ except ModuleNotFoundError:
     pip.main(['install', "pygame"])
     import pygame
 
-WIDTH, HEIGHT = 500, 500
+WIDTH, HEIGHT = 700, 700
 tile_width = tile_height = 50
 FPS = 30
 pygame.init()
@@ -43,7 +43,7 @@ def start_screen():
                   "Правила работы в приложении:",
                   "  Не перенагружайте цепи!!!", "  Сохраняйте проект"]
 
-    fon = pygame.transform.scale(load_image('fon22.jpg'), (width, height))
+    fon = pygame.transform.scale(load_image('fon22.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 40)
     text_coord = 100
