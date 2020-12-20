@@ -41,7 +41,7 @@ def terminate():
 def start_screen():
     intro_text = ["  СПРАВКА", "",
                   "Правила работы в приложении:",
-                  "   Не перенагружайте цепи!!!"]
+                  "  Не перенагружайте цепи!!!", "  Сохраняйте проект"]
 
     fon = pygame.transform.scale(load_image('fon1.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
