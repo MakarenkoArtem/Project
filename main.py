@@ -1,64 +1,71 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt
-from PyQt5 import *
-from PyQt5.QtGui import *
-import pygame
 import sys
-import time
+import os
+import random
 
-class ImageWidget(QWidget):
-    def __init__(self,surface,parent=None):
-        super(ImageWidget,self).__init__(parent)
-        w=surface.get_width()
-        h=surface.get_height()
-        self.data=surface.get_buffer()
-        self.image=QtGui.QImage(self.data,w,h,QtGui.QImage.Format_RGB32)
+try:
+    import pygame
+except ModuleNotFoundError:
+    import pip
 
-    def paintEvent(self,event):
-        qp=QtGui.QPainter()
-        qp.begin(self)
-        qp.drawImage(0,0,self.image)
-        qp.end()
+    pip.main(['install', "pygame"])
+    import pygame
 
-
-class MainWindow(QMainWindow):
-    def __init__(self,parent=None):
-        super(MainWindow,self).__init__(parent)
-        self.resize(1500, 700)
-        pygame.init()
-        s=pygame.Surface((1500,700))
-        s.fill((64,128,192,224))
-        running = True
-        self.xy = None
-        self.y = 0
-        clock = pygame.time.Clock()
-        while running:
-            for event in pygame.event.get():
-                print(event)
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    xy, y = event.pos, 0
-                elif event.type == pygame.QUIT:
-                    running = False
-            s.fill((0, 0, 255))
-            if self.xy is not None:
-                pygame.draw.circle(s,(255,0,255,0),self.xy,int(self.y))
-                #pygame.draw.circle(screen, (255, 255, 0), xy, int(y))
-                self.y += 0.4
-            self.setCentralWidget(ImageWidget(s))
-            self.show()
-            clock.tick(25)
-        pygame.quit()
-
-    def mousePressEvent(self, event):
-        if (event.button() == Qt.LeftButton):
-            self.xy = (event.x(), event.y())
-            self.y = 0
+WIDTH, HEIGHT = 700, 700
+tile_width = tile_height = 50
+FPS = 30
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 
+def load_image(name, colorkey=None):
+    fullname = os.path.join(name)
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    if colorkey is not None:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    else:
+        image = image.convert_alpha()
+    return image
 
 
+def terminate():
+    pygame.quit()
+    sys.exit()
 
-app=QApplication(sys.argv)
-w=MainWindow()
-w.show()
-app.exec_()
+
+def start_screen():
+    intro_text = ["  СПРАВКА", "",
+                  "Правила работы в приложении:",
+                  "  Не перенагружайте цепи!!!", "  Сохраняйте проект"]
+
+    fon = pygame.transform.scale(load_image('fon22.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 40)
+    text_coord = 100
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 100
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    clock = pygame.time.Clock()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return  # начинаем игру
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+start_screen()
+pygame.quit()
