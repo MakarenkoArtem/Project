@@ -1,4 +1,3 @@
-from builtins import set
 
 import pip
 pip.main(['install', 'pygame_gui'])
