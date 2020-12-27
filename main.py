@@ -103,7 +103,7 @@ def game_screen():
     blue = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((550, 275), (100, 50)), text='blue',
         manager=manage)
-    res = [i[0] for i in data.select(['Type'], 'Groups')]
+    res = data.select(['Type'], 'Groups')
     group = pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
         options_list=res, starting_option=res[0],
         relative_rect=pygame.Rect((10, 10), (150, 25)), manager=manage
