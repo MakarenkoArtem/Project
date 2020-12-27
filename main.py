@@ -2,6 +2,7 @@ import sys
 import os
 import random
 from enum import Enum
+from work_with_bd import *
 
 try:
     import pygame_gui
@@ -31,6 +32,7 @@ tile_width = tile_height = 50
 FPS = 30
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+data = Base_date('elements.sqlite3')
 
 
 def load_image(name, colorkey=None):
@@ -101,9 +103,10 @@ def game_screen():
     blue = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((550, 275), (100, 50)), text='blue',
         manager=manage)
-    lis = pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
-        options_list=['Easy', 'Medium', 'Hard'], starting_option='Easy',
-        relative_rect=pygame.Rect((350, 150), (100, 25)), manager=manage
+    res = [i[0] for i in data.select(['Type'], 'Groups')]
+    group = pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
+        options_list=res, starting_option=res[0],
+        relative_rect=pygame.Rect((10, 10), (150, 25)), manager=manage
     )
     entry = pygame_gui.elements.UITextEntryLine(
         relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)
