@@ -122,7 +122,7 @@ def game_screen():
                 if event.user_type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
                     print(event.text)
                 elif event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
-                    run = False
+                    terminate()
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_HOVERED:
                     if event.ui_element == green:
                         color = (0, 255, 0)
