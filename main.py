@@ -1,8 +1,9 @@
 import sys
 import os
+import time
+from work_with_bd import *
 import random
 from enum import Enum
-from work_with_bd import *
 
 try:
     import pygame_gui
@@ -18,6 +19,8 @@ except ModuleNotFoundError:
 
     pip.main(['install', "pygame"])
     import pygame
+
+"""--------------------------------------------------------------------------"""
 
 
 class GameStates(Enum):
@@ -56,6 +59,25 @@ def terminate():
     sys.exit()
 
 
+def loading(n):
+    text = None
+    if n == 0:
+        lamp = pygame.sprite.Group()
+        sprite = pygame.sprite.Sprite()
+        try:
+            import work_with_bd
+            sprite.image = load_image("On.png", colorkey=-1)
+        except ModuleNotFoundError:
+            text = 'Нет модуля работы с базой данных'
+            sprite.image = load_image("Off.png", colorkey=-1)
+        finally:
+            sprite.rect = sprite.image.get_rect()
+            sprite.rect.x = 100
+            sprite.rect.y = 200
+            lamp.add(sprite)
+            lamp.draw(screen)
+    return text
+
 def start_screen():
     intro_text = ["  СПРАВКА", "",
                   "Правила работы в приложении:",
@@ -75,13 +97,36 @@ def start_screen():
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
     clock = pygame.time.Clock()
+    n = 0
+    start = time.time()
+    mistake = False
     while True:
+        push = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
-                return GameStates.GAME_SCREEN
+                if mistake:
+                    terminate()
+                push = True
+                if n == 1:
+                    return GameStates.GAME_SCREEN
+        if mistake:
+            mistake_rendered = font.render(message, 1, pygame.Color('red'))
+            mistake_rect = mistake_rendered.get_rect()
+            mistake_rect.top = 250
+            mistake_rect.x = 200
+            screen.blit(mistake_rendered, mistake_rect)
+
+        if time.time() - start > random.randrange(1, 5) or push:
+            start = time.time()
+            message = loading(n)
+            print(1)
+            if message is not None:
+                mistake = True
+
+            n += 1
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -131,6 +176,7 @@ def game_screen():
         relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)
     clock = pygame.time.Clock()
     run = True
+    element_sprites = pygame.sprite.Group()
     while run:
         time_delta = clock.tick(60) / 1000
         for event in pygame.event.get():
