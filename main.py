@@ -110,7 +110,7 @@ def start_screen():
                 if mistake:
                     terminate()
                 push = True
-                if n == 1:
+                if n:
                     return GameStates.GAME_SCREEN
         if mistake:
             mistake_rendered = font.render(message, 1, pygame.Color('red'))
@@ -162,7 +162,7 @@ def game_screen():
     window_surface = pygame.display.set_mode((WIDTH, HEIGHT))
     background = pygame.Surface((WIDTH, HEIGHT))
     draw(background)
-    manage = pygame_gui.UIManager((WIDTH, HEIGHT))
+    manage = pygame_gui.UIManager((WIDTH, HEIGHT), 'data/theme.json')
     res = data.select(['Type'], 'Groups')
     group = pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
         options_list=res, starting_option=res[0],
@@ -174,6 +174,11 @@ def game_screen():
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
     entry = pygame_gui.elements.UITextEntryLine(
         relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)
+    """======================Кнопка с картинкой============================"""
+    b = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((100, 5 * 40 + 40), (150, 150)),
+            text='my_button', manager=manage, object_id="#my_button")
+    """======================Кнопка с картинкой============================"""
     clock = pygame.time.Clock()
     run = True
     element_sprites = pygame.sprite.Group()
