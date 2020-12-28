@@ -4,7 +4,6 @@ import time
 from work_with_bd import *
 import random
 from enum import Enum
-
 try:
     import pygame_gui
 except ModuleNotFoundError:
@@ -177,7 +176,7 @@ def game_screen():
     """======================Кнопка с картинкой============================"""
     b = pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect((100, 5 * 40 + 40), (150, 150)),
-            text='my_button', manager=manage, object_id="#my_button")
+            text='', manager=manage, object_id="#my_button")
     """======================Кнопка с картинкой============================"""
     clock = pygame.time.Clock()
     run = True
