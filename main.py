@@ -220,11 +220,11 @@ def game_screen():
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
     entry = pygame_gui.elements.UITextEntryLine(
         relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)
-    """======================Кнопка с картинкой============================"""
+    """======================Кнопка с картинкой============================
     b = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((100, 5 * 40 + 40), (150, 150)),
         text='', manager=manage, object_id="#my_button")
-    """======================Кнопка с картинкой============================"""
+    ======================Кнопка с картинкой============================"""
     clock = pygame.time.Clock()
     run = True
     element_sprites = pygame.sprite.Group()
