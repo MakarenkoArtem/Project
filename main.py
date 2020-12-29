@@ -61,9 +61,9 @@ def terminate():
 
 def loading(n):
     text = None
+    global lamp, z, data
     if n == -1:
         print(n)
-        global lamp, z
         z = []
         lamp = pygame.sprite.Group()
         for i in range(CHECKS):
@@ -86,12 +86,27 @@ def loading(n):
             text = 'Нет модуля для работы с базой данных'
     elif n == 2:
         if os.path.isfile('data/elements.sqlite3'):  # Проверка существования бд
-            global data
             data = Base_date('data/elements.sqlite3')
         else:
             text = "База данных не найдена"
-    elif n == 3 and not os.path.isfile('data/__init__.py'):  # Проверка существования файла для работы с кнопками-картинками
-        text = "Нет файла для работы с кнопками-картинками"
+    elif n == 3:
+        if os.path.isfile('data/__init__.py'):# Проверка существования файла для работы с кнопками-картинками
+            d = {}
+            for y in data.select(['Type'], 'Groups'):
+                elements = data.select(['image_on'], 'Elements', 'and',
+                                       ["type", y])
+                for i in range(len(elements)):
+                    d[y + "_" + str(i)] = {
+                        "images": {
+                            "normal_image": {
+                                "path": f"data/images/{elements[i]}"
+                            }
+                        }
+                    }
+                with open("data/theme.json", "w") as write_file:
+                    json.dump(d, write_file)
+        else:
+            text = "Нет файла для работы с кнопками-картинками"
     if text is None and n >= 0:
         z[n].image = load_image("data/On.png", colorkey=None)
 
@@ -156,27 +171,19 @@ def start_screen():
 buttons = []
 
 
-def change_group(elements, manage):
+def change_group(group, manage):
     global buttons, data
     for _ in range(len(buttons)):
         buttons.pop(0).kill()
     buttons = []
     d = {}
-    print(elements)
+    print(group)
+    elements = data.select(['image_on'], 'Elements', 'and', ["type", group])
     for i in range(len(elements)):
-        d[str(i)] = {
-            "images": {
-                "normal_image": {
-                    "path": f"data/images/{elements[i]}"
-                }
-            }
-        }
-        with open("data/theme.json", "w") as write_file:
-            json.dump(d, write_file)
         buttons.append(pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((10, i * 95 + 40), (60, 90)),
+            relative_rect=pygame.Rect((10, i * 100 + 40), (60, 95)),
             text='',
-            manager=manage, object_id=str(i)))
+            manager=manage, object_id=group + "_" + str(i)))
 
 def draw(background):
     background.fill((0, 0, 0))
@@ -200,8 +207,7 @@ def game_screen():
         options_list=res, starting_option=res[0],
         relative_rect=pygame.Rect((10, 10), (150, 25)), manager=manage
     )
-    change_group(data.select(['title'], 'Elements', 'and', ["type", res[0]]),
-                 manage)
+    change_group(res[0],manage)
     pygame.draw.rect(background, (50, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
     entry = pygame_gui.elements.UITextEntryLine(
@@ -234,11 +240,7 @@ def game_screen():
                     color = (0, 0, 0)
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                     print(event.text)
-                    print(data.select(['image_on'], 'Elements', 'and',
-                                             ["type", event.text]))
-                    print(data.select(['image_on'], 'Elements'))
-                    change_group(data.select(['image_on'], 'Elements', 'and',
-                                             ["type", event.text]), manage)
+                    change_group(event.text, manage)
                 draw(background)
             manage.process_events(event)
         manage.update(time_delta)
