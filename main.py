@@ -4,6 +4,7 @@ import time
 from work_with_bd import *
 import random
 from enum import Enum
+
 try:
     import pygame_gui
 except ModuleNotFoundError:
@@ -35,6 +36,7 @@ FPS = 30
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 data = Base_date('elements.sqlite3')
+CHECKS = 3
 
 
 def load_image(name, colorkey=None):
@@ -60,22 +62,45 @@ def terminate():
 
 def loading(n):
     text = None
-    if n == 0:
+    if n == -1:
+        print(n)
+        global lamp, z
+        z = []
         lamp = pygame.sprite.Group()
-        sprite = pygame.sprite.Sprite()
+        for i in range(CHECKS):
+            sprite = pygame.sprite.Sprite()
+            sprite.image = load_image("Off.png", colorkey=None)
+            sprite.rect = sprite.image.get_rect()
+            sprite.rect.x = WIDTH // (CHECKS + 1) * (i + 1)
+            sprite.rect.y = 750
+            lamp.add(sprite)
+            z.append(sprite)
+    elif n == 0:
+        try:
+            import pygame_gui
+        except ModuleNotFoundError:
+            import pip
+
+            pip.main(['install', "pygame_gui"])
+        try:
+            import pygame_gui
+            z[n].image = load_image("On.png", colorkey=None)
+        except ModuleNotFoundError:
+            text = 'Нет модуля для работы с виджетами'
+    elif n == 1:
         try:
             import work_with_bd
-            sprite.image = load_image("On.png", colorkey=-1)
+            z[n].image = load_image("On.png", colorkey=None)
         except ModuleNotFoundError:
-            text = 'Нет модуля работы с базой данных'
-            sprite.image = load_image("Off.png", colorkey=-1)
-        finally:
-            sprite.rect = sprite.image.get_rect()
-            sprite.rect.x = 100
-            sprite.rect.y = 200
-            lamp.add(sprite)
-            lamp.draw(screen)
+            text = 'Нет модуля для работы с базой данных'
+    elif n == 2:
+        if os.path.isfile('elements.sqlite3'):  # Проверка существования бд
+            z[n].image = load_image("On.png", colorkey=None)
+        else:
+            text = "База данных не найдена"
+    lamp.draw(screen)
     return text
+
 
 def start_screen():
     intro_text = ["  СПРАВКА", "",
@@ -96,6 +121,7 @@ def start_screen():
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
     clock = pygame.time.Clock()
+    loading(-1)
     n = 0
     start = time.time()
     mistake = False
@@ -109,19 +135,19 @@ def start_screen():
                 if mistake:
                     terminate()
                 push = True
-                if n:
+                if n >= CHECKS:
                     return GameStates.GAME_SCREEN
         if mistake:
             mistake_rendered = font.render(message, 1, pygame.Color('red'))
             mistake_rect = mistake_rendered.get_rect()
-            mistake_rect.top = 250
-            mistake_rect.x = 200
+            mistake_rect.y = 850
+            mistake_rect.x = WIDTH // 4
             screen.blit(mistake_rendered, mistake_rect)
 
-        if time.time() - start > random.randrange(1, 5) or push:
+        if (time.time() - start > random.randrange(1, 5) or push) and n < CHECKS \
+                and not mistake:
             start = time.time()
             message = loading(n)
-            print(1)
             if message is not None:
                 mistake = True
 
@@ -175,8 +201,8 @@ def game_screen():
         relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)
     """======================Кнопка с картинкой============================"""
     b = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((100, 5 * 40 + 40), (150, 150)),
-            text='', manager=manage, object_id="#my_button")
+        relative_rect=pygame.Rect((100, 5 * 40 + 40), (150, 150)),
+        text='', manager=manage, object_id="#my_button")
     """======================Кнопка с картинкой============================"""
     clock = pygame.time.Clock()
     run = True
