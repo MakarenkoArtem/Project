@@ -168,7 +168,7 @@ def change_group(elements, manage):
     if not len(elements):
         return
     im = data.select(['Image_on'], 'Elements', 'and', ["title", elements[0]])
-    image = open(f'data/{elements[0]}.png', 'wb')
+    image = open('data/output.png', 'wb')
     image.write(im[0])
 
     d = {
@@ -177,7 +177,7 @@ def change_group(elements, manage):
             {
                 "normal_image": {
                 "package": "data",
-                "resource": f"{elements[0]}.png"
+                "resource": "output.png"
             }
             }
         }
