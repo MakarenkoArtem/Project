@@ -68,7 +68,7 @@ def loading(n):
         lamp = pygame.sprite.Group()
         for i in range(CHECKS):
             sprite = pygame.sprite.Sprite()
-            sprite.image = load_image("Off.png", colorkey=None)
+            sprite.image = load_image("data/Off.png", colorkey=None)
             sprite.rect = sprite.image.get_rect()
             sprite.rect.x = WIDTH // (CHECKS + 1) * (i + 1)
             sprite.rect.y = 750
@@ -77,27 +77,24 @@ def loading(n):
     elif n == 0:
         try:
             import pygame_gui
-            z[n].image = load_image("On.png", colorkey=None)
         except ModuleNotFoundError:
             text = 'Нет модуля для работы с виджетами'
     elif n == 1:
         try:
             import work_with_bd
-            z[n].image = load_image("On.png", colorkey=None)
         except ModuleNotFoundError:
             text = 'Нет модуля для работы с базой данных'
     elif n == 2:
-        if os.path.isfile('elements.sqlite3'):  # Проверка существования бд
-            z[n].image = load_image("On.png", colorkey=None)
+        if os.path.isfile('data/elements.sqlite3'):  # Проверка существования бд
             global data
-            data = Base_date('elements.sqlite3')
+            data = Base_date('data/elements.sqlite3')
         else:
             text = "База данных не найдена"
-    elif n == 3:
-        if os.path.isfile('data/__init__.py'):  # Проверка существования файла для работы с кнопками-картинками
-            z[n].image = load_image("On.png", colorkey=None)
-        else:
-            text = "Нет файла для работы с кнопками-картинками"
+    elif n == 3 and not os.path.isfile('data/__init__.py'):  # Проверка существования файла для работы с кнопками-картинками
+        text = "Нет файла для работы с кнопками-картинками"
+    if text is None and n >= 0:
+        z[n].image = load_image("data/On.png", colorkey=None)
+
     lamp.draw(screen)
     return text
 
@@ -164,37 +161,26 @@ def change_group(elements, manage):
     for _ in range(len(buttons)):
         buttons.pop(0).kill()
     buttons = []
-    '''----------------Пока не работает--------------------------------------'''
-    if not len(elements):
-        return
-    im = data.select(['Image_on'], 'Elements', 'and', ["title", elements[0]])
-    image = open('data/output.png', 'wb')
-    image.write(im[0])
-
-    d = {
-        "#my_button": {
-            "images":
-            {
+    d = {}
+    print(elements)
+    for i in range(len(elements)):
+        d[str(i)] = {
+            "images": {
                 "normal_image": {
-                "package": "data",
-                "resource": "output.png"
-            }
+                    "path": f"data/images/{elements[i]}"
+                }
             }
         }
-    }
-    with open("data/theme.json", "w") as write_file:
-        json.dump(d, write_file)
-    """----------------------------------------------------------------------"""
-    for i in range(len(elements)):
+        with open("data/theme.json", "w") as write_file:
+            json.dump(d, write_file)
         buttons.append(pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((10, i * 140 + 40), (150, 135)),
+            relative_rect=pygame.Rect((10, i * 95 + 40), (60, 90)),
             text='',
-            manager=manage, object_id="#my_button"))
-
+            manager=manage, object_id=str(i)))
 
 def draw(background):
     background.fill((0, 0, 0))
-    pygame.draw.rect(background, (50, 150, 50),
+    pygame.draw.rect(background, (0, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
     for i in range(29):
         for y in range(26):
@@ -220,11 +206,11 @@ def game_screen():
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
     entry = pygame_gui.elements.UITextEntryLine(
         relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)
-    """======================Кнопка с картинкой============================
+    """======================Кнопка с картинкой============================"""
     b = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((100, 5 * 40 + 40), (150, 150)),
         text='', manager=manage, object_id="#my_button")
-    ======================Кнопка с картинкой============================"""
+    """======================Кнопка с картинкой============================"""
     clock = pygame.time.Clock()
     run = True
     element_sprites = pygame.sprite.Group()
@@ -253,7 +239,10 @@ def game_screen():
                     color = (0, 0, 0)
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                     print(event.text)
-                    change_group(data.select(['title'], 'Elements', 'and',
+                    print(data.select(['image_on'], 'Elements', 'and',
+                                             ["type", event.text]))
+                    print(data.select(['image_on'], 'Elements'))
+                    change_group(data.select(['image_on'], 'Elements', 'and',
                                              ["type", event.text]), manage)
                 draw(background)
             manage.process_events(event)
