@@ -11,7 +11,6 @@ except ModuleNotFoundError:
     import pip
 
     pip.main(['install', "pygame_gui"])
-    import pygame_gui
 try:
     import pygame
 except ModuleNotFoundError:
@@ -77,12 +76,6 @@ def loading(n):
     elif n == 0:
         try:
             import pygame_gui
-        except ModuleNotFoundError:
-            import pip
-
-            pip.main(['install', "pygame_gui"])
-        try:
-            import pygame_gui
             z[n].image = load_image("On.png", colorkey=None)
         except ModuleNotFoundError:
             text = 'Нет модуля для работы с виджетами'
@@ -100,7 +93,7 @@ def loading(n):
         else:
             text = "База данных не найдена"
     elif n == 3:
-        if os.path.isfile('data/__init__.py'):  # Проверка существования бд
+        if os.path.isfile('data/__init__.py'):  # Проверка существования файла для работы с кнопками-картинками
             z[n].image = load_image("On.png", colorkey=None)
         else:
             text = "Нет файла для работы с кнопками-картинками"
@@ -119,7 +112,7 @@ def start_screen():
     font = pygame.font.Font(None, 40)
     text_coord = 100
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, (50, 50, 150))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
