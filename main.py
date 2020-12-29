@@ -164,10 +164,11 @@ def change_group(elements, manage):
     for _ in range(len(buttons)):
         buttons.pop(0).kill()
     buttons = []
+    '''----------------Пока не работает--------------------------------------'''
     if not len(elements):
         return
     im = data.select(['Image_on'], 'Elements', 'and', ["title", elements[0]])
-    image = open('data/output.png', 'wb')
+    image = open(f'data/{elements[0]}.png', 'wb')
     image.write(im[0])
 
     d = {
@@ -176,14 +177,14 @@ def change_group(elements, manage):
             {
                 "normal_image": {
                 "package": "data",
-                "resource": "output.png"
+                "resource": f"{elements[0]}.png"
             }
             }
         }
     }
     with open("data/theme.json", "w") as write_file:
         json.dump(d, write_file)
-
+    """----------------------------------------------------------------------"""
     for i in range(len(elements)):
         buttons.append(pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect((10, i * 140 + 40), (150, 135)),
