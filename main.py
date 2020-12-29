@@ -36,7 +36,7 @@ FPS = 30
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 data = Base_date('elements.sqlite3')
-CHECKS = 3
+CHECKS = 4
 
 
 def load_image(name, colorkey=None):
@@ -98,6 +98,11 @@ def loading(n):
             z[n].image = load_image("On.png", colorkey=None)
         else:
             text = "База данных не найдена"
+    elif n == 3:
+        if os.path.isfile('data/__init__.py'):  # Проверка существования бд
+            z[n].image = load_image("On.png", colorkey=None)
+        else:
+            text = "Нет файла для работы с кнопками-картинками"
     lamp.draw(screen)
     return text
 
