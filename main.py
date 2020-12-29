@@ -35,7 +35,6 @@ tile_width = tile_height = 50
 FPS = 30
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-data = Base_date('elements.sqlite3')
 CHECKS = 4
 
 
@@ -96,6 +95,8 @@ def loading(n):
     elif n == 2:
         if os.path.isfile('elements.sqlite3'):  # Проверка существования бд
             z[n].image = load_image("On.png", colorkey=None)
+            global data
+            data = Base_date('elements.sqlite3')
         else:
             text = "База данных не найдена"
     elif n == 3:
