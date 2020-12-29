@@ -1,12 +1,1 @@
-{
-    "#my_button":
-    {
-        "images":
-        {
-            "normal_image": {
-                "package": "data",
-                "resource": "On.png"
-            }
-        }
-    }
-}
+{"#my_button": {"images": {"normal_image": {"package": "data", "resource": "output.png"}}}}

@@ -1,4 +1,5 @@
 import sys
+import json
 import os
 import time
 from work_with_bd import *
@@ -159,15 +160,35 @@ buttons = []
 
 
 def change_group(elements, manage):
-    global buttons
+    global buttons, data
     for _ in range(len(buttons)):
         buttons.pop(0).kill()
     buttons = []
+    if not len(elements):
+        return
+    im = data.select(['Image_on'], 'Elements', 'and', ["title", elements[0]])
+    image = open('data/output.png', 'wb')
+    image.write(im[0])
+
+    d = {
+        "#my_button": {
+            "images":
+            {
+                "normal_image": {
+                "package": "data",
+                "resource": "output.png"
+            }
+            }
+        }
+    }
+    with open("data/theme.json", "w") as write_file:
+        json.dump(d, write_file)
+
     for i in range(len(elements)):
         buttons.append(pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((10, i * 40 + 40), (150, 35)),
-            text=elements[i],
-            manager=manage))
+            relative_rect=pygame.Rect((10, i * 140 + 40), (150, 135)),
+            text='',
+            manager=manage, object_id="#my_button"))
 
 
 def draw(background):
