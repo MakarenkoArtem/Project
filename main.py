@@ -20,7 +20,7 @@ except ModuleNotFoundError:
     pip.main(['install', "pygame"])
     import pygame
 
-"""--------------------------------------------------------------------------"""
+
 
 
 class GameStates(Enum):
@@ -30,7 +30,7 @@ class GameStates(Enum):
     STOP_SCREEN = 4
 
 
-WIDTH, HEIGHT = 1200, 900
+size = WIDTH, HEIGHT = 1200, 900
 tile_width = tile_height = 50
 FPS = 30
 pygame.init()
@@ -90,21 +90,23 @@ def loading(n):
         else:
             text = "База данных не найдена"
     elif n == 3:
-        if os.path.isfile('data/__init__.py'):# Проверка существования файла для работы с кнопками-картинками
+        if os.path.isfile(
+                'data/__init__.py'):  # Проверка существования файла для работы с кнопками-картинками
             d = {}
             for y in data.select(['Type'], 'Groups'):
                 elements = data.select(['image_on'], 'Elements', 'and',
                                        ["type", y])
                 for i in range(len(elements)):
-                    d[y + "_" + str(i)] = {
-                        "images": {
-                            "normal_image": {
-                                "path": f"data/images/{elements[i]}"
+                    if os.path.isfile(f'data/images/{elements[i]}'):
+                        d[y + "_" + str(i)] = {
+                            "images": {
+                                "normal_image": {
+                                    "path": f"data/images/{elements[i]}"
+                                }
                             }
                         }
-                    }
-                with open("data/theme.json", "w") as write_file:
-                    json.dump(d, write_file)
+            with open("data/theme.json", "w") as write_file:
+                json.dump(d, write_file)
         else:
             text = "Нет файла для работы с кнопками-картинками"
     if text is None and n >= 0:
@@ -168,31 +170,64 @@ def start_screen():
         clock.tick(FPS)
 
 
-buttons = []
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    # позиционировать камеру на объекте target
+    def update(self, target):
+        self.dx = self.x - target.rect.x
+        self.dy = self.y - target.rect.y
+        self.x, self.y = target.rect.x + self.dx, target.rect.y + self.dy
+
+buttons = {}
 
 
 def change_group(group, manage):
     global buttons, data
-    for _ in range(len(buttons)):
-        buttons.pop(0).kill()
-    buttons = []
+    for i in buttons.keys():
+        i.kill()
+    buttons = {}
     d = {}
-    print(group)
     elements = data.select(['image_on'], 'Elements', 'and', ["type", group])
     for i in range(len(elements)):
-        buttons.append(pygame_gui.elements.UIButton(
+        buttons[pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect((10, i * 100 + 40), (60, 95)),
             text='',
-            manager=manage, object_id=group + "_" + str(i)))
+            manager=manage, object_id=group + "_" + str(i))] = elements[i]
+    print(buttons)
+'''class Landing(pygame.sprite.Sprite):
+    image = load_image("pt.png")
 
+    def __init__(self, group, pos):
+        super().__init__(group)
+        self.image = Landing.image
+        self.rect = self.image.get_rect()
+'''
+class Border(pygame.sprite.Sprite):
+    # строго вертикальный или строго горизонтальный отрезок
+    def __init__(self, group, x1, y1, x2, y2):
+        super().__init__(group)
+        self.image = pygame.Surface([x2, y2])
+        print(x1, y1, x2, y2)
+        self.rect = pygame.Rect(x1, y1, x2, y2)
+        pygame.draw.rect(self.image, (150, 250, 150), (0, 0, x2, y2), 1)
 def draw(background):
+    print(1)
     background.fill((0, 0, 0))
     pygame.draw.rect(background, (0, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
-    for i in range(29):
+    '''for i in range(29):
         for y in range(26):
             pygame.draw.rect(background, (150, 150, 150),
-                             (200 + i * 35, y * 35, 35, 35), width=1)
+                             (200 + i * 35, y * 35, 35, 35), width=1)'''
 
 
 def game_screen():
@@ -200,22 +235,34 @@ def game_screen():
     pygame.display.set_caption("Start")
     window_surface = pygame.display.set_mode((WIDTH, HEIGHT))
     background = pygame.Surface((WIDTH, HEIGHT))
-    draw(background)
+    #draw(background)
     manage = pygame_gui.UIManager((WIDTH, HEIGHT), 'data/theme.json')
     res = data.select(['Type'], 'Groups')
     group = pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
         options_list=res, starting_option=res[0],
         relative_rect=pygame.Rect((10, 10), (150, 25)), manager=manage
     )
-    change_group(res[0],manage)
+    change_group(res[0], manage)
     pygame.draw.rect(background, (50, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
-    entry = pygame_gui.elements.UITextEntryLine(
-        relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)
+    '''entry = pygame_gui.elements.UITextEntryLine(
+        relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)'''
     clock = pygame.time.Clock()
     run = True
-    element_sprites = pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
+    sprite = pygame.sprite.Group()
+    for i in range(29):
+        Border(sprite, 200 + i * 50, 0, 2, HEIGHT)
+    for i in range(26):
+        Border(sprite, 200, i * 50, WIDTH, 2)
+    print(sprite)
+    #element_sprites = pygame.sprite.Group()
+    #camera=Camera()
+    mouse_down = False
     while run:
+        #background.fill((0, 150, 50))
+        #all_sprites.draw(background)
+        #draw(background)
         time_delta = clock.tick(60) / 1000
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -229,23 +276,29 @@ def game_screen():
                     print(event.text)
                 elif event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
                     terminate()
-                elif event.user_type == pygame_gui.UI_BUTTON_ON_HOVERED:
-                    '''if event.ui_element == green:
-                        color = (0, 255, 0)
-                    elif event.ui_element == red:
-                        color = (255, 0, 0)
-                    elif event.ui_element == blue:
-                        color = (0, 0, 255)'''
+                elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                    print(buttons[event.ui_element])
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     color = (0, 0, 0)
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                     print(event.text)
                     change_group(event.text, manage)
-                draw(background)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_down = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                mouse_down = False
+            elif event.type == pygame.MOUSEMOTION and mouse_down:
+                print(20000)
+                '''camera.update(player)
+                    for sprite in all_sprites:
+                        camera.apply(sprite)'''
             manage.process_events(event)
         manage.update(time_delta)
         window_surface.blit(background, (0, 0))
+        sprite.draw(screen)
         manage.draw_ui(window_surface)
+        #all_sprites.update()
+        #screen.fill((0, 150, 50))
         pygame.display.flip()
 
 
