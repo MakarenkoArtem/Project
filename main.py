@@ -297,8 +297,8 @@ def game_screen():
             if event.type == pygame.QUIT:
                 conf_dialog = pygame_gui.windows.UIConfirmationDialog(
                     rect=pygame.Rect((250, 200), (300, 200)), manager=manage,
-                    window_title="Подтверждение",
-                    action_long_desc='Вы уверены?', action_short_name='Да',
+                    window_title="Выход",
+                    action_long_desc='Вы хотите выйти?', action_short_name='Да',
                     blocking=False)
             elif event.type == pygame.USEREVENT:
                 if event.user_type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
