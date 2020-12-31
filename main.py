@@ -222,13 +222,12 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
         self.down = False
         self.dx, self.dy = 0, 0
 
-    def down_ev(self, pos):
+    def down_event(self, pos):
         if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[1] <= pos[1] <= self.rect[1] + self.rect[
             3]:
             self.down = True
             self.dx = pos[0] - self.rect[0]
             self.dy = pos[1] - self.rect[1]
-        print(self.down)
         return self.down
 
     def move(self, pos):
@@ -240,9 +239,7 @@ class Elementsprites(pygame.sprite.Group):
     def down(self, pos):
         for sprite in self.sprites():
             if isinstance(sprite, Element):
-                print(sprite)
-                print(sprite.down_ev(pos))
-                if sprite.down_ev(pos):
+                if sprite.down_event(pos):
                     print(sprite)
                     return sprite
 
@@ -252,13 +249,11 @@ class Border(pygame.sprite.Sprite):
     def __init__(self, group, x1, y1, x2, y2):
         super().__init__(group)
         self.image = pygame.Surface([x2, y2])
-        print(x1, y1, x2, y2)
         self.rect = pygame.Rect(x1, y1, x2, y2)
         pygame.draw.rect(self.image, (150, 250, 150), (0, 0, x2, y2), 1)
 
 
 def draw(background):
-    print(1)
     background.fill((0, 0, 0))
     pygame.draw.rect(background, (0, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
@@ -266,7 +261,6 @@ def draw(background):
         for y in range(26):
             pygame.draw.rect(background, (150, 150, 150),
                              (200 + i * 35, y * 35, 35, 35), width=1)'''
-
 
 def game_screen():
     global state
@@ -293,7 +287,6 @@ def game_screen():
         Border(sprite, 200 + i * 50, 0, 2, HEIGHT)
     for i in range(26):
         Border(sprite, 200, i * 50, WIDTH, 2)
-    print(sprite)
     element_sprites = Elementsprites()
     # camera=Camera()
     mouse_down = False
@@ -322,19 +315,14 @@ def game_screen():
                     change_group(event.text, manage)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 elem = element_sprites.down(event.pos)
-                print(elem)
             elif event.type == pygame.MOUSEBUTTONUP and elem is not None:
-                print(False)
                 elem.down = False
                 elem = None
             elif event.type == pygame.MOUSEMOTION and elem is not None and elem.down:
-                print(20000)
                 elem.move(event.pos)
                 '''camera.update(player)
                     for sprite in all_sprites:
                         camera.apply(sprite)'''
-            if elem is not None:
-                print(elem.down)
             manage.process_events(event)
         manage.update(time_delta)
         window_surface.blit(background, (0, 0))
