@@ -34,6 +34,7 @@ class GameStates(Enum):
     GAME_ON_PAUSE_SCREEN = 3
     STOP_SCREEN = 4
 
+
 size = get_monitors()[0]
 size = WIDTH, HEIGHT = size.width - 25, size.height - 100
 tile_width = tile_height = 50
@@ -212,13 +213,35 @@ def change_group(group, manage):
     print(buttons)
 
 
-class Element(pygame.sprite.Sprite): #Надо работать здесь
+class Element(pygame.sprite.Sprite):  # Надо работать здесь
     def __init__(self, group, image):
         super().__init__(group)
         self.image = load_image("data/images/" + image)
         self.rect = self.image.get_rect()
         self.rect.y, self.rect.x = 300, 300
+        self.down = False
 
+    def down_ev(self, pos):
+        if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[1] <= pos[1] <= self.rect[1] + self.rect[
+            3]:
+            self.down = True
+        print(self.down)
+        return self.down
+
+    def move(self, pos):
+        if self.down:
+            self.rect.x, self.rect.y = pos
+
+
+class Elementsprites(pygame.sprite.Group):
+    def down(self, pos):
+        for sprite in self.sprites():
+            if isinstance(sprite, Element):
+                print(sprite)
+                print(sprite.down_ev(pos))
+                if sprite.down_ev(pos):
+                    print(sprite)
+                    return sprite
 
 
 class Border(pygame.sprite.Sprite):
@@ -268,13 +291,11 @@ def game_screen():
     for i in range(26):
         Border(sprite, 200, i * 50, WIDTH, 2)
     print(sprite)
-    element_sprites = pygame.sprite.Group()
+    element_sprites = Elementsprites()
     # camera=Camera()
     mouse_down = False
+    elem = None
     while run:
-        # background.fill((0, 150, 50))
-        # all_sprites.draw(background)
-        # draw(background)
         time_delta = clock.tick(60) / 1000
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -290,21 +311,27 @@ def game_screen():
                     terminate()
                 elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element in buttons.keys():
-                        Element(element_sprites, buttons[event.ui_element])
+                        element_sprites.add(Element(element_sprites, buttons[event.ui_element]))
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     color = (0, 0, 0)
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                     print(event.text)
                     change_group(event.text, manage)
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_down = True
-            elif event.type == pygame.MOUSEBUTTONUP:
-                mouse_down = False
-            elif event.type == pygame.MOUSEMOTION and mouse_down:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                elem = element_sprites.down(event.pos)
+                print(elem)
+            elif event.type == pygame.MOUSEBUTTONUP and elem is not None:
+                print(False)
+                elem.down = False
+                elem = None
+            elif event.type == pygame.MOUSEMOTION and elem is not None and elem.down:
                 print(20000)
+                elem.move(event.pos)
                 '''camera.update(player)
                     for sprite in all_sprites:
                         camera.apply(sprite)'''
+            if elem is not None:
+                print(elem.down)
             manage.process_events(event)
         manage.update(time_delta)
         window_surface.blit(background, (0, 0))
