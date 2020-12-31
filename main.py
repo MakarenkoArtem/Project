@@ -220,17 +220,20 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
         self.rect = self.image.get_rect()
         self.rect.y, self.rect.x = 300, 300
         self.down = False
+        self.dx, self.dy = 0, 0
 
     def down_ev(self, pos):
         if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[1] <= pos[1] <= self.rect[1] + self.rect[
             3]:
             self.down = True
+            self.dx = pos[0] - self.rect[0]
+            self.dy = pos[1] - self.rect[1]
         print(self.down)
         return self.down
 
     def move(self, pos):
         if self.down:
-            self.rect.x, self.rect.y = pos
+            self.rect.x, self.rect.y = pos[0] - self.dx, pos[1] - self.dy
 
 
 class Elementsprites(pygame.sprite.Group):
