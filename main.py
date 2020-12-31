@@ -19,8 +19,13 @@ except ModuleNotFoundError:
 
     pip.main(['install', "pygame"])
     import pygame
+try:
+    from screeninfo import get_monitors
+except ModuleNotFoundError:
+    import pip
 
-
+    pip.main(['install', "screeninfo"])
+    from screeninfo import get_monitors
 
 
 class GameStates(Enum):
@@ -29,8 +34,8 @@ class GameStates(Enum):
     GAME_ON_PAUSE_SCREEN = 3
     STOP_SCREEN = 4
 
-
-size = WIDTH, HEIGHT = 1200, 900
+size = get_monitors()[0]
+size = WIDTH, HEIGHT = size.width - 50, size.height - 100
 tile_width = tile_height = 50
 FPS = 30
 pygame.init()
@@ -63,7 +68,6 @@ def loading(n):
     text = None
     global lamp, z, data
     if n == -1:
-        print(n)
         z = []
         lamp = pygame.sprite.Group()
         for i in range(CHECKS):
@@ -71,7 +75,7 @@ def loading(n):
             sprite.image = load_image("data/Off.png", colorkey=None)
             sprite.rect = sprite.image.get_rect()
             sprite.rect.x = WIDTH // (CHECKS + 1) * (i + 1)
-            sprite.rect.y = 750
+            sprite.rect.y = HEIGHT * 0.8
             lamp.add(sprite)
             z.append(sprite)
     elif n == 0:
@@ -111,6 +115,8 @@ def loading(n):
             text = "Нет файла для работы с кнопками-картинками"
     if text is None and n >= 0:
         z[n].image = load_image("data/On.png", colorkey=None)
+    elif text is not None:
+        text = text.rjust(int(WIDTH * 0.0645), " ")
 
     lamp.draw(screen)
     return text
@@ -125,13 +131,13 @@ def start_screen():
                                  (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 40)
-    text_coord = 100
+    text_coord = WIDTH * 0.1
     for line in intro_text:
         string_rendered = font.render(line, 1, (50, 50, 150))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 100
+        intro_rect.x = HEIGHT * 0.08
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
     clock = pygame.time.Clock()
@@ -146,16 +152,16 @@ def start_screen():
                 terminate()
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
-                if mistake:
-                    terminate()
+                # if mistake:
+                #    terminate()
                 push = True
                 if n >= CHECKS:
                     return GameStates.GAME_SCREEN
         if mistake:
             mistake_rendered = font.render(message, 1, pygame.Color('red'))
             mistake_rect = mistake_rendered.get_rect()
-            mistake_rect.y = 850
-            mistake_rect.x = WIDTH // 4
+            mistake_rect.y = HEIGHT * 0.95
+            mistake_rect.x = 0
             screen.blit(mistake_rendered, mistake_rect)
 
         if (time.time() - start > random.randrange(1, 5) or push) and n < CHECKS \
@@ -187,6 +193,7 @@ class Camera:
         self.dy = self.y - target.rect.y
         self.x, self.y = target.rect.x + self.dx, target.rect.y + self.dy
 
+
 buttons = {}
 
 
@@ -203,6 +210,8 @@ def change_group(group, manage):
             text='',
             manager=manage, object_id=group + "_" + str(i))] = elements[i]
     print(buttons)
+
+
 '''class Landing(pygame.sprite.Sprite):
     image = load_image("pt.png")
 
@@ -211,6 +220,8 @@ def change_group(group, manage):
         self.image = Landing.image
         self.rect = self.image.get_rect()
 '''
+
+
 class Border(pygame.sprite.Sprite):
     # строго вертикальный или строго горизонтальный отрезок
     def __init__(self, group, x1, y1, x2, y2):
@@ -219,6 +230,8 @@ class Border(pygame.sprite.Sprite):
         print(x1, y1, x2, y2)
         self.rect = pygame.Rect(x1, y1, x2, y2)
         pygame.draw.rect(self.image, (150, 250, 150), (0, 0, x2, y2), 1)
+
+
 def draw(background):
     print(1)
     background.fill((0, 0, 0))
@@ -235,7 +248,7 @@ def game_screen():
     pygame.display.set_caption("Start")
     window_surface = pygame.display.set_mode((WIDTH, HEIGHT))
     background = pygame.Surface((WIDTH, HEIGHT))
-    #draw(background)
+    # draw(background)
     manage = pygame_gui.UIManager((WIDTH, HEIGHT), 'data/theme.json')
     res = data.select(['Type'], 'Groups')
     group = pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
@@ -256,13 +269,13 @@ def game_screen():
     for i in range(26):
         Border(sprite, 200, i * 50, WIDTH, 2)
     print(sprite)
-    #element_sprites = pygame.sprite.Group()
-    #camera=Camera()
+    # element_sprites = pygame.sprite.Group()
+    # camera=Camera()
     mouse_down = False
     while run:
-        #background.fill((0, 150, 50))
-        #all_sprites.draw(background)
-        #draw(background)
+        # background.fill((0, 150, 50))
+        # all_sprites.draw(background)
+        # draw(background)
         time_delta = clock.tick(60) / 1000
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -277,7 +290,8 @@ def game_screen():
                 elif event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
                     terminate()
                 elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                    print(buttons[event.ui_element])
+                    if event.ui_element in buttons.keys():
+                        print(buttons[event.ui_element])
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     color = (0, 0, 0)
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
@@ -297,8 +311,8 @@ def game_screen():
         window_surface.blit(background, (0, 0))
         sprite.draw(screen)
         manage.draw_ui(window_surface)
-        #all_sprites.update()
-        #screen.fill((0, 150, 50))
+        # all_sprites.update()
+        # screen.fill((0, 150, 50))
         pygame.display.flip()
 
 
