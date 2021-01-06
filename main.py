@@ -36,7 +36,7 @@ class GameStates(Enum):
 
 
 size = get_monitors()[0]
-size = WIDTH, HEIGHT = size.width - 25, size.height - 100
+size = WIDTH, HEIGHT = size.width - 50, size.height - 100
 tile_width = tile_height = 50
 FPS = 30
 pygame.init()
@@ -222,24 +222,29 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
         self.down = False
         self.dx, self.dy = 0, 0
 
-    def down_event(self, pos):
+    def down_event(self, pos, sprite):
         if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[1] <= pos[1] <= self.rect[1] + self.rect[
             3]:
             self.down = True
             self.dx = pos[0] - self.rect[0]
             self.dy = pos[1] - self.rect[1]
+            self.sprite = sprite
         return self.down
 
     def move(self, pos):
         if self.down:
             self.rect.x, self.rect.y = pos[0] - self.dx, pos[1] - self.dy
+        if -1 < pos[0] < 201:
+            self.sprite.kill()
+
+
 
 
 class Elementsprites(pygame.sprite.Group):
     def down(self, pos):
         for sprite in self.sprites():
             if isinstance(sprite, Element):
-                if sprite.down_event(pos):
+                if sprite.down_event(pos, sprite):
                     print(sprite)
                     return sprite
 
@@ -257,6 +262,7 @@ def draw(background):
     background.fill((0, 0, 0))
     pygame.draw.rect(background, (0, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
+
     '''for i in range(29):
         for y in range(26):
             pygame.draw.rect(background, (150, 150, 150),
@@ -283,10 +289,17 @@ def game_screen():
     run = True
     all_sprites = pygame.sprite.Group()
     sprite = pygame.sprite.Group()
-    for i in range(29):
+    for i in range(WIDTH // 50 + 1):
         Border(sprite, 200 + i * 50, 0, 2, HEIGHT)
-    for i in range(26):
+    for i in range(HEIGHT // 50 + 1):
         Border(sprite, 200, i * 50, WIDTH, 2)
+    fontObj = pygame.font.Font('freesansbold.ttf', 15)
+    text_del = ['Чтобы удалить элемент,', 'надо перетянуть', 'его в черную зону.']
+    for i in text_del:
+        textSurfaceObj = fontObj.render(i, True, 'white')
+        textRectObj = textSurfaceObj.get_rect()
+        textRectObj.center = (100, HEIGHT - 100 + text_del.index(i) * 30)
+        background.blit(textSurfaceObj, textRectObj)
     element_sprites = Elementsprites()
     # camera=Camera()
     mouse_down = False
