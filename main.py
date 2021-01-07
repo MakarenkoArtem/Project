@@ -176,7 +176,7 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
-
+'''
 class Camera:
     # зададим начальный сдвиг камеры
     def __init__(self):
@@ -193,6 +193,39 @@ class Camera:
         self.dx = self.x - target.rect.x
         self.dy = self.y - target.rect.y
         self.x, self.y = target.rect.x + self.dx, target.rect.y + self.dy
+'''
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, all_sprites, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.rect.move(x, y)
+        self.n = 0
+        self.down = False
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.n += 1
+        if self.n // 35 and self.down:
+            self.n = 0
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+        if self.n // 35:
+            self.n = 0
+        if not self.down:
+            self.cur_frame = 0
+            self.image = self.frames[self.cur_frame]
 
 
 buttons = {}
@@ -207,9 +240,10 @@ def change_group(group, manage):
     elements = data.select(['image_on'], 'Elements', 'and', ["type", group])
     for i in range(len(elements)):
         buttons[pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((10, i * 100 + 40), (60, 95)),
+            relative_rect=pygame.Rect((15 + (i + 1) // 2 * 75, i // 2 * 100 + 40), (65, 95)),
             text='',
             manager=manage, object_id=group + "_" + str(i))] = elements[i]
+
     print(buttons)
 
 
@@ -217,6 +251,7 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
     def __init__(self, group, image):
         super().__init__(group)
         self.image = load_image("data/images/" + image)
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect.y, self.rect.x = 300, 300
         self.down = False
@@ -234,8 +269,6 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
     def move(self, pos):
         if self.down:
             self.rect.x, self.rect.y = pos[0] - self.dx, pos[1] - self.dy
-        if -1 < pos[0] < 201:
-            self.sprite.kill()
 
 
 
@@ -247,6 +280,10 @@ class Elementsprites(pygame.sprite.Group):
                 if sprite.down_event(pos, sprite):
                     print(sprite)
                     return sprite
+    def killed(self, trash):
+        for sprite in self.sprites():
+            if pygame.sprite.collide_mask(sprite, trash):
+                sprite.kill()
 
 
 class Border(pygame.sprite.Sprite):
@@ -278,7 +315,7 @@ def game_screen():
     res = data.select(['Type'], 'Groups')
     group = pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
         options_list=res, starting_option=res[0],
-        relative_rect=pygame.Rect((10, 10), (150, 25)), manager=manage
+        relative_rect=pygame.Rect((15, 10), (150, 25)), manager=manage
     )
     change_group(res[0], manage)
     pygame.draw.rect(background, (50, 150, 50),
@@ -288,6 +325,7 @@ def game_screen():
     clock = pygame.time.Clock()
     run = True
     all_sprites = pygame.sprite.Group()
+    trash = AnimatedSprite(all_sprites, load_image("data/basket.png", colorkey=-1), 2, 1, WIDTH - 75, HEIGHT - 75)
     sprite = pygame.sprite.Group()
     for i in range(WIDTH // 50 + 1):
         Border(sprite, 200 + i * 50, 0, 2, HEIGHT)
@@ -328,8 +366,14 @@ def game_screen():
                     change_group(event.text, manage)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 elem = element_sprites.down(event.pos)
+                if event.button == 3:
+                    pass
+                if elem is not None:
+                    trash.down = True
+                print(event.button)
             elif event.type == pygame.MOUSEBUTTONUP and elem is not None:
                 elem.down = False
+                trash.down = False
                 elem = None
             elif event.type == pygame.MOUSEMOTION and elem is not None and elem.down:
                 elem.move(event.pos)
@@ -340,9 +384,11 @@ def game_screen():
         manage.update(time_delta)
         window_surface.blit(background, (0, 0))
         sprite.draw(screen)
+        element_sprites.killed(trash)
         element_sprites.draw(screen)
         manage.draw_ui(window_surface)
-        # all_sprites.update()
+        all_sprites.draw(screen)
+        all_sprites.update()
         # screen.fill((0, 150, 50))
         pygame.display.flip()
 
