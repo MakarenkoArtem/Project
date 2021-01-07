@@ -224,7 +224,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         if self.n // 35:
             self.n = 0
         if not self.down:
-            self.cur_frame = 0
+            self.cur_frame = 1
             self.image = self.frames[self.cur_frame]
 
 
@@ -248,9 +248,12 @@ def change_group(group, manage):
 
 
 class Element(pygame.sprite.Sprite):  # Надо работать здесь
-    def __init__(self, group, image):
+    def __init__(self, group, buttons, args):
         super().__init__(group)
-        self.image = load_image("data/images/" + image)
+        self.title, self.voltage, self.image_off, self.image_on, self.health = args[1:]
+        #self.voltage = float(self.voltage)
+        self.image_on = load_image("data/images/" + self.image_on)
+        self.image = self.image_off = load_image("data/images/" + self.image_off)
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect.y, self.rect.x = 300, 300
@@ -325,7 +328,7 @@ def game_screen():
     clock = pygame.time.Clock()
     run = True
     all_sprites = pygame.sprite.Group()
-    trash = AnimatedSprite(all_sprites, load_image("data/basket.png", colorkey=-1), 2, 1, WIDTH - 75, HEIGHT - 75)
+    trash = AnimatedSprite(all_sprites, load_image("data/basket.png", colorkey=-1), 2, 1, WIDTH - 60, HEIGHT - 65)
     sprite = pygame.sprite.Group()
     for i in range(WIDTH // 50 + 1):
         Border(sprite, 200 + i * 50, 0, 2, HEIGHT)
@@ -358,7 +361,7 @@ def game_screen():
                     terminate()
                 elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element in buttons.keys():
-                        element_sprites.add(Element(element_sprites, buttons[event.ui_element]))
+                        element_sprites.add(Element(element_sprites, buttons, data.select(['*'], 'Elements', 'and', ['image_on', buttons[event.ui_element]])[0]))
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     color = (0, 0, 0)
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
@@ -376,6 +379,7 @@ def game_screen():
                 trash.down = False
                 elem = None
             elif event.type == pygame.MOUSEMOTION and elem is not None and elem.down:
+                print()
                 elem.move(event.pos)
                 '''camera.update(player)
                     for sprite in all_sprites:

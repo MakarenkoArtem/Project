@@ -18,7 +18,7 @@ class Base_date:  # класс для работы с бд
         else:
             result = cur.execute(
                 f'''SELECT {", ".join(res)} FROM {table}''').fetchall()
-        if len(res) == 1:
+        if len(res) == 1 and res != ["*"]:
             result = [i[0] for i in result]
         con.close()
         return result
