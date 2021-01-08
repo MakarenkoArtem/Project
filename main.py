@@ -321,7 +321,7 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
     def __init__(self, group, buttons, args):
         super().__init__(group)
         self.title, self.voltage, self.image_off, self.image_on, self.health = args[1:]
-        self.voltage = float(".".join(self.voltage.split(",")))
+        self.voltage = float(".".join(str(self.voltage).split(",")))
         if self.health is None:
             self.health = 100
         self.image_on = load_image("data/images/" + self.image_on)
@@ -349,6 +349,14 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
     def move(self, pos):
         if self.down:
             self.rect.x, self.rect.y = pos[0] - self.dx, pos[1] - self.dy
+        if 200 > pos[0]:
+            self.rect.x = 200
+        elif WIDTH - 20 < pos[0] + self.dx:
+            self.rect.x = WIDTH - 20 - self.dx
+        if 0 > pos[1]:
+            self.rect.y = 0
+        elif HEIGHT - 30 < pos[1] + self.dy:
+            self.rect.y = HEIGHT - 30 - self.dy
 
 
 class Elementsprites(pygame.sprite.Group):
