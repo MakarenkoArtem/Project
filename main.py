@@ -5,6 +5,7 @@ import time
 from work_with_bd import *
 import random
 from enum import Enum
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QDialog
 
 try:
     import pygame_gui
@@ -176,6 +177,7 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
+
 '''
 class Camera:
     # зададим начальный сдвиг камеры
@@ -194,6 +196,8 @@ class Camera:
         self.dy = self.y - target.rect.y
         self.x, self.y = target.rect.x + self.dx, target.rect.y + self.dy
 '''
+
+
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, all_sprites, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
@@ -247,11 +251,79 @@ def change_group(group, manage):
     print(buttons)
 
 
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+
+class Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.resize(372, 341)
+        self.label = QtWidgets.QLabel(Dialog)
+        self.label.setGeometry(QtCore.QRect(6, 212, 111, 16))
+        self.label.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
+        self.label.setObjectName("label")
+        self.lineEdit = QtWidgets.QLineEdit(Dialog)
+        self.lineEdit.setGeometry(QtCore.QRect(120, 210, 221, 20))
+        self.lineEdit.setObjectName("lineEdit")
+        self.label_2 = QtWidgets.QLabel(Dialog)
+        self.label_2.setGeometry(QtCore.QRect(6, 242, 111, 16))
+        self.label_2.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
+        self.label_2.setObjectName("label_2")
+        self.label_3 = QtWidgets.QLabel(Dialog)
+        self.label_3.setGeometry(QtCore.QRect(350, 240, 16, 16))
+        self.label_3.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
+        self.label_3.setObjectName("label_3")
+        self.label_4 = QtWidgets.QLabel(Dialog)
+        self.label_4.setGeometry(QtCore.QRect(6, 272, 111, 16))
+        self.label_4.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
+        self.label_4.setObjectName("label_4")
+        self.label_5 = QtWidgets.QLabel(Dialog)
+        self.label_5.setGeometry(QtCore.QRect(350, 270, 16, 16))
+        self.label_5.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
+        self.label_5.setObjectName("label_5")
+        self.doubleSpinBox = QtWidgets.QDoubleSpinBox(Dialog)
+        self.doubleSpinBox.setGeometry(QtCore.QRect(120, 240, 221, 21))
+        self.doubleSpinBox.setObjectName("doubleSpinBox")
+        self.spinBox = QtWidgets.QSpinBox(Dialog)
+        self.spinBox.setGeometry(QtCore.QRect(120, 270, 221, 21))
+        self.spinBox.setMaximum(100)
+        self.spinBox.setProperty("value", 100)
+        self.spinBox.setObjectName("spinBox")
+        self.pushButton = QtWidgets.QPushButton(Dialog)
+        self.pushButton.setGeometry(QtCore.QRect(264, 310, 101, 23))
+        self.pushButton.setObjectName("pushButton")
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        self.label.setText(_translate("Dialog", "Название:"))
+        self.label_2.setText(_translate("Dialog", "Напряжение:"))
+        self.label_3.setText(_translate("Dialog", "В"))
+        self.label_4.setText(_translate("Dialog", "Целостность:"))
+        self.label_5.setText(_translate("Dialog", "%"))
+        self.pushButton.setText(_translate("Dialog", "Редактировать"))
+
+
+class Info(QDialog, Ui_Dialog):  # Класс виджета информации о программе
+    def __init__(self, title, voltage, health):
+        super(Info, self).__init__()
+        super().__init__()
+        self.setupUi(self)
+        self.lineEdit.setText(title)
+        self.doubleSpinBox.setValue(voltage)
+        self.spinBox.setValue(health)
+
+
 class Element(pygame.sprite.Sprite):  # Надо работать здесь
     def __init__(self, group, buttons, args):
         super().__init__(group)
         self.title, self.voltage, self.image_off, self.image_on, self.health = args[1:]
-        #self.voltage = float(self.voltage)
+        self.voltage = float(".".join(self.voltage.split(",")))
+        if self.health is None:
+            self.health = 100
         self.image_on = load_image("data/images/" + self.image_on)
         self.image = self.image_off = load_image("data/images/" + self.image_off)
         self.mask = pygame.mask.from_surface(self.image)
@@ -259,6 +331,11 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
         self.rect.y, self.rect.x = 300, 300
         self.down = False
         self.dx, self.dy = 0, 0
+
+    def show(self):
+        app = QApplication(sys.argv)
+        Info(self.title, self.voltage, self.health).exec_()  # Вызов класс виджета информации о программе
+        app.exit()
 
     def down_event(self, pos, sprite):
         if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[1] <= pos[1] <= self.rect[1] + self.rect[
@@ -274,8 +351,6 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
             self.rect.x, self.rect.y = pos[0] - self.dx, pos[1] - self.dy
 
 
-
-
 class Elementsprites(pygame.sprite.Group):
     def down(self, pos):
         for sprite in self.sprites():
@@ -283,6 +358,7 @@ class Elementsprites(pygame.sprite.Group):
                 if sprite.down_event(pos, sprite):
                     print(sprite)
                     return sprite
+
     def killed(self, trash):
         for sprite in self.sprites():
             if pygame.sprite.collide_mask(sprite, trash):
@@ -307,6 +383,7 @@ def draw(background):
         for y in range(26):
             pygame.draw.rect(background, (150, 150, 150),
                              (200 + i * 35, y * 35, 35, 35), width=1)'''
+
 
 def game_screen():
     global state
@@ -334,13 +411,6 @@ def game_screen():
         Border(sprite, 200 + i * 50, 0, 2, HEIGHT)
     for i in range(HEIGHT // 50 + 1):
         Border(sprite, 200, i * 50, WIDTH, 2)
-    fontObj = pygame.font.Font('freesansbold.ttf', 15)
-    text_del = ['Чтобы удалить элемент,', 'надо перетянуть', 'его в черную зону.']
-    for i in text_del:
-        textSurfaceObj = fontObj.render(i, True, 'white')
-        textRectObj = textSurfaceObj.get_rect()
-        textRectObj.center = (100, HEIGHT - 100 + text_del.index(i) * 30)
-        background.blit(textSurfaceObj, textRectObj)
     element_sprites = Elementsprites()
     # camera=Camera()
     mouse_down = False
@@ -361,7 +431,10 @@ def game_screen():
                     terminate()
                 elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element in buttons.keys():
-                        element_sprites.add(Element(element_sprites, buttons, data.select(['*'], 'Elements', 'and', ['image_on', buttons[event.ui_element]])[0]))
+                        element_sprites.add(Element(element_sprites, buttons, data.select(['*'], 'Elements', 'and',
+                                                                                          ['image_on',
+                                                                                           buttons[event.ui_element]])[
+                            0]))
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     color = (0, 0, 0)
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
@@ -369,8 +442,8 @@ def game_screen():
                     change_group(event.text, manage)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 elem = element_sprites.down(event.pos)
-                if event.button == 3:
-                    pass
+                if event.button == 3 and elem is not None:
+                    elem.show()
                 if elem is not None:
                     trash.down = True
                 print(event.button)
@@ -379,7 +452,6 @@ def game_screen():
                 trash.down = False
                 elem = None
             elif event.type == pygame.MOUSEMOTION and elem is not None and elem.down:
-                print()
                 elem.move(event.pos)
                 '''camera.update(player)
                     for sprite in all_sprites:
@@ -397,7 +469,12 @@ def game_screen():
         pygame.display.flip()
 
 
+def except_hook(cls, exception, traceback):
+    sys.__excepthook__(cls, exception, traceback)
+
+
 if __name__ == "__main__":
+    sys.excepthook = except_hook
     state = GameStates.START_SCREEN
 
     screen_funcs = {GameStates.START_SCREEN: start_screen,
