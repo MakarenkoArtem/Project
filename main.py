@@ -379,16 +379,10 @@ class Wire(pygame.sprite.Sprite):
     def __init__(self, group, background):
         super().__init__(group)
         self.ports = []
-        self.image = background #pygame.Surface([3, 3])
+        self.image = pygame.Surface([3, 3])
         #self.rect = pygame.Rect(-11, -10, 3, 3)
         self.rect = self.image.get_rect()
         pygame.draw.line(self.image, (255, 0, 0), (-10, -10), (-9, -9), 3)
-        self.image = self.image.convert()
-        try:
-            colorkey = self.image.get_at((-1, 0))
-            self.image.set_colorkey(colorkey)
-        except IndexError:
-            print('error')
     def point(self, port):
         if len(self.ports) < 2:
             self.ports.append(port)
@@ -401,9 +395,13 @@ class Wire(pygame.sprite.Sprite):
                 a = pos[0]
             if self.ports[0].rect.y > pos[1]:
                 b = pos[1]
-            self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
+            self.rect = self.image.get_rect()
+            #self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
             pygame.draw.line(self.image, (255, 0, 0), (0, 0), (pos[0], pos[1]), 3)
             print(2)
+        self.image = self.image.convert()
+        colorkey = self.image.get_at((self.rect.width - 1, 0))
+        self.image.set_colorkey(colorkey)
 
 
 class Portsprites(pygame.sprite.Group):
