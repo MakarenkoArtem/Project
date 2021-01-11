@@ -105,6 +105,17 @@ FPS = 30
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 CHECKS = 4
+JSON = {"wire": {
+    "colours": {
+        "normal_bg": "#25292e"},
+    "images": {
+        "normal_image": {
+            "path":
+                "data/wire.png"
+      }
+    }
+  }
+}
 
 
 def load_image(name, colorkey=None):
@@ -160,13 +171,13 @@ def loading(n):
     elif n == 3:
         if os.path.isfile(
                 'data/__init__.py'):  # Проверка существования файла для работы с кнопками-картинками
-            d = {}
+            global JSON
             for y in data.select(['Type'], 'Groups'):
                 elements = data.select(['image_on'], 'Elements', 'and',
                                        ["type", y])
                 for i in range(len(elements)):
                     if os.path.isfile(f'data/images/{elements[i]}'):
-                        d[y + "_" + str(i)] = {
+                        JSON[y + "_" + str(i)] = {
                             "images": {
                                 "normal_image": {
                                     "path": f"data/images/{elements[i]}"
@@ -174,7 +185,7 @@ def loading(n):
                             }
                         }
             with open("data/theme.json", "w") as write_file:
-                json.dump(d, write_file)
+                json.dump(JSON, write_file)
         else:
             text = "Нет файла для работы с кнопками-картинками"
     if text is None and n >= 0:
@@ -246,12 +257,10 @@ class Camera:
     def __init__(self):
         self.dx = 0
         self.dy = 0
-
     # сдвинуть объект obj на смещение камеры
     def apply(self, obj):
         obj.rect.x += self.dx
         obj.rect.y += self.dy
-
     # позиционировать камеру на объекте target
     def update(self, target):
         self.dx = self.x - target.rect.x
@@ -281,6 +290,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
                 frame_location = (self.rect.w * i, self.rect.h * j)
                 self.frames.append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
+
     def show(self):
         pass
 
@@ -373,15 +383,20 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
         self.voltage = float(".".join(str(self.voltage).split(",")))
         if self.health is None:
             self.health = 100
-        self.image_text = ["data/images/" + self.image_on, "data/images/" + self.image_off]
+        self.image_text = ["data/images/" + self.image_on,
+                           "data/images/" + self.image_off]
         self.image_on = load_image("data/images/" + self.image_on)
         self.image = self.image_off = load_image(
             "data/images/" + self.image_off)
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
-        self.rect.x, self.rect.y = random.randrange(200, WIDTH - self.rect.width), random.randrange(0, HEIGHT - self.rect.height)
+        self.rect.x, self.rect.y = random.randrange(200,
+                                                    WIDTH - self.rect.width), random.randrange(
+            0, HEIGHT - self.rect.height)
         while len(pygame.sprite.spritecollide(self, group, False)) - 1:
-            self.rect.x, self.rect.y = random.randrange(200, WIDTH - self.rect.width), random.randrange(0, HEIGHT - self.rect.height)
+            self.rect.x, self.rect.y = random.randrange(200,
+                                                        WIDTH - self.rect.width), random.randrange(
+                0, HEIGHT - self.rect.height)
         self.down = False
         self.dx, self.dy = 0, 0
 
@@ -417,7 +432,8 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
 class Elementsprites(pygame.sprite.Group):
     def down(self, pos):
         for sprite in self.sprites():
-            if isinstance(sprite, Element) or isinstance(sprite, AnimatedSprite):
+            if isinstance(sprite, Element) or isinstance(sprite,
+                                                         AnimatedSprite):
                 if sprite.down_event(pos, sprite):
                     return sprite
 
@@ -481,6 +497,10 @@ def game_screen():
     # camera=Camera()
     mouse_down = False
     elem = None
+    wire = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect(
+            (WIDTH - 65, 5), (60, 70)), text='',
+        manager=manage, object_id='wire')
     while run:
         time_delta = clock.tick(60) / 1000
         for event in pygame.event.get():
@@ -552,3 +572,27 @@ if __name__ == "__main__":
     while True:
         state = screen_funcs[state]()
 pygame.quit()
+
+'''
+class Wire(pygame.sprite.Sprite):
+    def __init__(self, group):
+        super().__init__(group)
+    def first_point(self, element):
+        self.image = pygame.Surface([10, 10])
+        self.rect = pygame.Rect(element[self][0], element[self][1], 10, 10)
+        pygame.draw.line(self.image, (255, 0, 0), (element[self][0], element[self][1], 10, 10), 3)
+        #self.type, self.title, self.voltage, self.image_off, self.image_on, self.health = args
+        # self.voltage =
+        self.health = 100
+        # self.image =
+        self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
+        #self.rect.x, self.rect.y = random.randrange(200, WIDTH - self.rect.width), random.randrange(0, HEIGHT - self.rect.height)
+        #while len(pygame.sprite.spritecollide(self, group, False)) - 1:
+        #    self.rect.x, self.rect.y = random.randrange(200, WIDTH - self.rect.width), random.randrange(0, HEIGHT - self.rect.height)
+        #self.down = False
+        #self.dx, self.dy = 0, 0
+    def update(self, pos):
+        self.rect.width = pos[0] - self.rect.x
+        self.rect.height = pos[1] - self.rect.y'''
+
