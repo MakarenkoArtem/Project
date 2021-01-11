@@ -379,28 +379,30 @@ class Wire(pygame.sprite.Sprite):
     def __init__(self, group, background):
         super().__init__(group)
         self.ports = []
-        self.image = pygame.Surface([3, 3])
+        self.image = pygame.Surface([WIDTH, HEIGHT])
         #self.rect = pygame.Rect(-11, -10, 3, 3)
         self.rect = self.image.get_rect()
         pygame.draw.line(self.image, (255, 0, 0), (-10, -10), (-9, -9), 3)
+        self.image = self.image.convert()
+        colorkey = self.image.get_at((self.rect.width - 1, 0))
+        self.image.set_colorkey(colorkey)
     def point(self, port):
         if len(self.ports) < 2:
             self.ports.append(port)
     def move(self, pos):
         print(3456, self.ports)
         if len(self.ports) == 1:
-            self.image = pygame.Surface([abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1])])
+            self.image = pygame.Surface([WIDTH, HEIGHT])
             a, b = self.ports[0].rect.x, self.ports[0].rect.y
             if self.ports[0].rect.x > pos[0]:
                 a = pos[0]
             if self.ports[0].rect.y > pos[1]:
                 b = pos[1]
-            self.rect = self.image.get_rect()
+            #self.rect = self.image.get_rect()
             #self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
-            pygame.draw.line(self.image, (255, 0, 0), (0, 0), (pos[0], pos[1]), 3)
-            print(2)
+            pygame.draw.line(self.image, (255, 0, 0), (self.ports[0].rect.x, self.ports[0].rect.y), (pos[0], pos[1]), 3)
         self.image = self.image.convert()
-        colorkey = self.image.get_at((self.rect.width - 1, 0))
+        colorkey = self.image.get_at((self.rect.width - 10, 0))
         self.image.set_colorkey(colorkey)
 
 
