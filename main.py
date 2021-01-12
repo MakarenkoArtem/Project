@@ -6,6 +6,7 @@ from work_with_bd import *
 import random
 import math
 from enum import Enum
+
 try:
     from PyQt5.QtWidgets import QApplication, QDialog
     from PyQt5 import QtCore, QtWidgets
@@ -220,6 +221,30 @@ def start_screen():
         clock.tick(FPS)
 
 
+class Info(QDialog,
+           design_pyqt5.Ui_Dialog):  # Класс виджета информации о программе
+    def __init__(self, type, title, voltage, image_text, health, text):
+        super(Info, self).__init__()
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowTitle(type)
+        self.image_off, self.image_on = image_text
+        self.lineEdit.setText(title)
+        self.doubleSpinBox.setValue(voltage)
+        self.spinBox.setValue(health)
+        self.t = True
+        self.textEdit.setText(text)
+        self.image()
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.image)
+        self.timer.start(900)
+
+    def image(self):
+        if self.t:
+            self.label_6.setPixmap(QPixmap(self.image_off))
+        else:
+            self.label_6.setPixmap(QPixmap(self.image_on))
+        self.t = not self.t
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -304,31 +329,6 @@ def change_group(group, manage):
     print(buttons)
 
 
-class Info(QDialog, design_pyqt5.Ui_Dialog):  # Класс виджета информации о программе
-    def __init__(self, type, title, voltage, image_text, health, text):
-        super(Info, self).__init__()
-        super().__init__()
-        self.setupUi(self)
-        self.setWindowTitle(type)
-        self.image_off, self.image_on = image_text
-        self.lineEdit.setText(title)
-        self.doubleSpinBox.setValue(voltage)
-        self.spinBox.setValue(health)
-        self.t = True
-        self.textEdit.setText(text)
-        self.image()
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.image)
-        self.timer.start(900)
-
-    def image(self):
-        if self.t:
-            self.label_6.setPixmap(QPixmap(self.image_off))
-        else:
-            self.label_6.setPixmap(QPixmap(self.image_on))
-        self.t = not self.t
-
-
 class Wire(pygame.sprite.Sprite):
     def __init__(self, group, background):
         super().__init__(group)
@@ -340,14 +340,17 @@ class Wire(pygame.sprite.Sprite):
         self.image = self.image.convert()
         colorkey = self.image.get_at((self.rect.width - 1, 0))
         self.image.set_colorkey(colorkey)
-    #def update(self):
+
+    # def update(self):
     #    if len(self.ports) == 1:
     #        self.rect.x, self.rect.y = self.ports[0].rect.x - 10, self.ports[0].rect.y - 10
 
     def point(self, port):
         if len(self.ports) < 2:
+            port.join = 0  # запускает анимацию присоединения
             self.ports.append(port)
             port.users.append(self)
+
     def killed(self):
         for i in self.ports:
             for y in range(len(i.users)):
@@ -355,9 +358,9 @@ class Wire(pygame.sprite.Sprite):
                     i.users.pop(y)
                     break
         self.kill()
+
     def move(self, pos):
         if len(self.ports) == 1:
-            print(self.ports[0].rect.x)
             self.image = pygame.Surface([WIDTH, HEIGHT])
             '''a, b = self.ports[0].rect.x, self.ports[0].rect.y
             if self.ports[0].rect.x > pos[0]:
@@ -367,10 +370,10 @@ class Wire(pygame.sprite.Sprite):
             # self.rect = self.image.get_rect()
             # self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
             pygame.draw.line(self.image, (255, 0, 0),
-                             (self.ports[0].rect.x, self.ports[0].rect.y),
+                             (self.ports[0].rect.x + self.ports[0].radius,
+                              self.ports[0].rect.y + self.ports[0].radius),
                              (pos[0], pos[1]), 5)
         elif len(self.ports) == 2:
-            print(self.ports[0].rect.x)
             self.image = pygame.Surface([WIDTH, HEIGHT])
             '''a, b = self.ports[0].rect.x, self.ports[0].rect.y
             if self.ports[0].rect.x > pos[0]:
@@ -380,8 +383,10 @@ class Wire(pygame.sprite.Sprite):
             # self.rect = self.image.get_rect()
             # self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
             pygame.draw.line(self.image, (255, 0, 0),
-                             (self.ports[0].rect.x, self.ports[0].rect.y),
-                             (self.ports[1].rect.x, self.ports[1].rect.y), 5)
+                             (self.ports[0].rect.x + self.ports[0].radius,
+                              self.ports[0].rect.y + self.ports[0].radius),
+                             (self.ports[1].rect.x + self.ports[1].radius,
+                              self.ports[1].rect.y + self.ports[1].radius), 5)
         self.image = self.image.convert()
         colorkey = self.image.get_at((self.rect.width - 10, 0))
         self.image.set_colorkey(colorkey)
@@ -405,36 +410,41 @@ class Wiresprites(pygame.sprite.Group):
     def move(self, pos):
         for sprite in self.sprites():
             sprite.move(pos)
-    def killed(self, trash):
-        for sprite in self.sprites():
-            if pygame.sprite.collide_mask(sprite, trash):
-                sprite.killed()
-
 
 
 class Port(pygame.sprite.Sprite):
     def __init__(self, pos, group_ports, master, znak=None):
         super().__init__(group_ports)
         self.master = master
-        radius = 10
-        self.image = pygame.Surface((2 * radius, 2 * radius),
+        self.radius = 20
+        self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
-        self.pos = [int(i) for i in pos.split(", ")]
-        self.rect = pygame.Rect(self.master.rect.x + self.pos[0] - radius, self.master.rect.y + self.pos[1] - radius, 2 * 10, 2 * 10)
-        pygame.draw.circle(self.image, pygame.Color("red"),
-                           (radius, radius), radius)
-        #self.pos = [self.rect.x, self.rect.y]
+        self.pos = [int(i) + self.radius for i in pos.split(", ")]
+        self.rect = pygame.Rect(
+            self.master.rect.x + self.pos[0] - self.radius * 2,
+            self.master.rect.y + self.pos[1] - self.radius * 2, 2 * self.radius,
+            2 * self.radius)
+        self.join = self.radius
         self.znak = znak
         self.users = []
 
-    def update(self):
-        self.rect.x, self.rect.y = self.master.rect.x + self.pos[0] - 10, self.master.rect.y + self.pos[1] - 10
+    def killed(self):
         for i in self.users:
-            for y in i.ports:
-                y = self
+            i.killed()
+        self.kill()
+
+    def update(self):
+        self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
+                                    pygame.SRCALPHA, 32)
+        self.rect.x, self.rect.y = self.master.rect.x + self.pos[
+            0] - self.radius * 2, self.master.rect.y + self.pos[
+                                       1] - self.radius * 2
+        if self.radius > self.join:
+            self.join += 1
+            pygame.draw.circle(self.image, pygame.Color("white"),
+                               (self.radius, self.radius), self.join, width=2)
 
     def down_event(self, pos, sprite):
-        print(self.pos, pos)
         r = math.sqrt(
             (self.rect.x - pos[0]) ** 2 + ((self.rect.y - pos[1]) ** 2))
         if r <= 25:
@@ -442,7 +452,7 @@ class Port(pygame.sprite.Sprite):
 
 
 class Element(pygame.sprite.Sprite):  # Надо работать здесь
-    def __init__(self, group, group_ports, args):
+    def __init__(self, group, group_ports, all_sprites, args):
         super().__init__(group)
         self.type, self.title, self.voltage, self.image_on, self.image_off, self.health, self.text = args[
                                                                                                      :7]
@@ -500,8 +510,20 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
             self.rect.y = 0
         elif HEIGHT - 30 < pos[1] - self.dy:
             self.rect.y = HEIGHT - 30
-        #for i in self.ports:
+        # for i in self.ports:
         #    i.master = self
+
+    def killed(self):
+        self.ports[0].killed()
+        self.ports[1].killed()
+        self.kill()
+
+
+class Allsprites(pygame.sprite.Group):
+    def killed(self, trash):
+        for sprite in self.sprites():
+            if pygame.sprite.collide_mask(sprite, trash) and sprite != trash:
+                sprite.killed()
 
 
 class Elementsprites(pygame.sprite.Group):
@@ -511,11 +533,6 @@ class Elementsprites(pygame.sprite.Group):
                                                          AnimatedSprite):
                 if sprite.down_event(pos, sprite):
                     return sprite
-
-    def killed(self, trash):
-        for sprite in self.sprites():
-            if pygame.sprite.collide_mask(sprite, trash) and sprite != trash:
-                sprite.kill()
 
 
 class Border(pygame.sprite.Sprite):
@@ -557,14 +574,12 @@ def game_screen():
         relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)'''
     clock = pygame.time.Clock()
     run = True
-    all_sprites = pygame.sprite.Group()
+    all_sprites = Allsprites()
     element_sprites = Elementsprites()
     port_sprites = Portsprites()
     wire_sprites = Wiresprites()
-    print(element_sprites)
     trash = AnimatedSprite(element_sprites, load_image("data/basket.png"), 2, 1,
                            WIDTH - 60, HEIGHT - 65)
-    print(element_sprites)
     all_sprites.add(trash)
     sprite = pygame.sprite.Group()
 
@@ -593,7 +608,7 @@ def game_screen():
                 elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element in buttons.keys():
                         all_sprites.add(
-                            Element(element_sprites, port_sprites,
+                            Element(element_sprites, port_sprites, all_sprites,
                                     data.select(['*'],
                                                 'Elements',
                                                 'and',
@@ -635,17 +650,15 @@ def game_screen():
             manage.process_events(event)
         manage.update(time_delta)
         window_surface.blit(background, (0, 0))
+        all_sprites.killed(trash)
         sprite.draw(screen)
-        wire_sprites.draw(screen)
-        element_sprites.killed(trash)
-        wire_sprites.killed(trash)
-        wire_sprites.update()
-        port_sprites.draw(screen)
-        port_sprites.update()
         element_sprites.draw(screen)
         port_sprites.draw(screen)
+        port_sprites.update()
+        wire_sprites.draw(screen)
+        wire_sprites.update()
         manage.draw_ui(window_surface)
-        all_sprites.draw(screen)
+        # all_sprites.draw(screen)
         all_sprites.update()
         pygame.display.flip()
 
