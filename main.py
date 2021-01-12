@@ -6,9 +6,10 @@ from work_with_bd import *
 import random
 import math
 from enum import Enum
-
 try:
     from PyQt5.QtWidgets import QApplication, QDialog
+    from PyQt5 import QtCore, QtWidgets
+    from PyQt5.QtGui import QPixmap
 except ModuleNotFoundError:
     import pip
 
@@ -37,65 +38,10 @@ except ModuleNotFoundError:
     pip.main(['install', "screeninfo"])
     from screeninfo import get_monitors
 
-
-class Ui_Dialog(object):
-    def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
-        Dialog.resize(328, 253)
-        self.label = QtWidgets.QLabel(Dialog)
-        self.label.setGeometry(QtCore.QRect(6, 132, 111, 16))
-        self.label.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
-        self.label.setObjectName("label")
-        self.lineEdit = QtWidgets.QLineEdit(Dialog)
-        self.lineEdit.setGeometry(QtCore.QRect(120, 130, 171, 20))
-        self.lineEdit.setObjectName("lineEdit")
-        self.label_2 = QtWidgets.QLabel(Dialog)
-        self.label_2.setGeometry(QtCore.QRect(6, 162, 111, 16))
-        self.label_2.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
-        self.label_2.setObjectName("label_2")
-        self.label_3 = QtWidgets.QLabel(Dialog)
-        self.label_3.setGeometry(QtCore.QRect(300, 160, 16, 16))
-        self.label_3.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
-        self.label_3.setObjectName("label_3")
-        self.label_4 = QtWidgets.QLabel(Dialog)
-        self.label_4.setGeometry(QtCore.QRect(6, 192, 111, 16))
-        self.label_4.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
-        self.label_4.setObjectName("label_4")
-        self.label_5 = QtWidgets.QLabel(Dialog)
-        self.label_5.setGeometry(QtCore.QRect(300, 190, 16, 16))
-        self.label_5.setStyleSheet("font: 12pt \"MS Shell Dlg 2\";")
-        self.label_5.setObjectName("label_5")
-        self.doubleSpinBox = QtWidgets.QDoubleSpinBox(Dialog)
-        self.doubleSpinBox.setGeometry(QtCore.QRect(120, 160, 171, 21))
-        self.doubleSpinBox.setObjectName("doubleSpinBox")
-        self.spinBox = QtWidgets.QSpinBox(Dialog)
-        self.spinBox.setGeometry(QtCore.QRect(120, 190, 171, 21))
-        self.spinBox.setMaximum(100)
-        self.spinBox.setProperty("value", 100)
-        self.spinBox.setObjectName("spinBox")
-        self.pushButton = QtWidgets.QPushButton(Dialog)
-        self.pushButton.setGeometry(QtCore.QRect(200, 220, 101, 23))
-        self.pushButton.setObjectName("pushButton")
-        self.label_6 = QtWidgets.QLabel(Dialog)
-        self.label_6.setGeometry(QtCore.QRect(10, 20, 55, 90))
-        self.label_6.setObjectName("label_6")
-        self.textEdit = QtWidgets.QTextEdit(Dialog)
-        self.textEdit.setGeometry(QtCore.QRect(80, 10, 241, 111))
-        self.textEdit.setObjectName("textEdit")
-
-        self.retranslateUi(Dialog)
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
-
-    def retranslateUi(self, Dialog):
-        _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.label.setText(_translate("Dialog", "Название:"))
-        self.label_2.setText(_translate("Dialog", "Напряжение:"))
-        self.label_3.setText(_translate("Dialog", "В"))
-        self.label_4.setText(_translate("Dialog", "Целостность:"))
-        self.label_5.setText(_translate("Dialog", "%"))
-        self.pushButton.setText(_translate("Dialog", "Редактировать"))
-        self.label_6.setText(_translate("Dialog", "TextLabel"))
+try:
+    import design_pyqt5
+except ModuleNotFoundError:
+    pass
 
 
 class GameStates(Enum):
@@ -204,10 +150,13 @@ def loading(n):
             pip.main(['install', "PyQt5"])
         try:
             from PyQt5.QtWidgets import QApplication, QDialog
-            from PyQt5 import QtCore, QtWidgets
-            from PyQt5.QtGui import QPixmap
         except ModuleNotFoundError:
             text = "Нет файла для работы с графическим интерфейсом"
+    elif n == 5:
+        try:
+            import design_pyqt5
+        except ModuleNotFoundError:
+            text = "Нет файла с графическим интерфейсом"
     if text is None and n >= 0:
         z[n].image = load_image("data/On.png", colorkey=None)
     elif text is not None:
@@ -271,22 +220,6 @@ def start_screen():
         clock.tick(FPS)
 
 
-'''
-class Camera:
-    # зададим начальный сдвиг камеры
-    def __init__(self):
-        self.dx = 0
-        self.dy = 0
-    # сдвинуть объект obj на смещение камеры
-    def apply(self, obj):
-        obj.rect.x += self.dx
-        obj.rect.y += self.dy
-    # позиционировать камеру на объекте target
-    def update(self, target):
-        self.dx = self.x - target.rect.x
-        self.dy = self.y - target.rect.y
-        self.x, self.y = target.rect.x + self.dx, target.rect.y + self.dy
-'''
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -371,7 +304,7 @@ def change_group(group, manage):
     print(buttons)
 
 
-class Info(QDialog, Ui_Dialog):  # Класс виджета информации о программе
+class Info(QDialog, design_pyqt5.Ui_Dialog):  # Класс виджета информации о программе
     def __init__(self, type, title, voltage, image_text, health, text):
         super(Info, self).__init__()
         super().__init__()
@@ -403,29 +336,52 @@ class Wire(pygame.sprite.Sprite):
         self.image = pygame.Surface([WIDTH, HEIGHT])
         # self.rect = pygame.Rect(-11, -10, 3, 3)
         self.rect = self.image.get_rect()
-        pygame.draw.line(self.image, (255, 0, 0), (-10, -10), (-9, -9), 3)
+        pygame.draw.line(self.image, (255, 0, 0), (-10, -10), (-9, -9), 5)
         self.image = self.image.convert()
         colorkey = self.image.get_at((self.rect.width - 1, 0))
         self.image.set_colorkey(colorkey)
+    #def update(self):
+    #    if len(self.ports) == 1:
+    #        self.rect.x, self.rect.y = self.ports[0].rect.x - 10, self.ports[0].rect.y - 10
 
     def point(self, port):
         if len(self.ports) < 2:
             self.ports.append(port)
-
+            port.users.append(self)
+    def killed(self):
+        for i in self.ports:
+            for y in range(len(i.users)):
+                if i.users[y] == self:
+                    i.users.pop(y)
+                    break
+        self.kill()
     def move(self, pos):
-        print(3456, self.ports)
         if len(self.ports) == 1:
+            print(self.ports[0].rect.x)
             self.image = pygame.Surface([WIDTH, HEIGHT])
-            a, b = self.ports[0].rect.x, self.ports[0].rect.y
+            '''a, b = self.ports[0].rect.x, self.ports[0].rect.y
             if self.ports[0].rect.x > pos[0]:
                 a = pos[0]
             if self.ports[0].rect.y > pos[1]:
-                b = pos[1]
+                b = pos[1]'''
             # self.rect = self.image.get_rect()
             # self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
             pygame.draw.line(self.image, (255, 0, 0),
                              (self.ports[0].rect.x, self.ports[0].rect.y),
-                             (pos[0], pos[1]), 3)
+                             (pos[0], pos[1]), 5)
+        elif len(self.ports) == 2:
+            print(self.ports[0].rect.x)
+            self.image = pygame.Surface([WIDTH, HEIGHT])
+            '''a, b = self.ports[0].rect.x, self.ports[0].rect.y
+            if self.ports[0].rect.x > pos[0]:
+                a = pos[0]
+            if self.ports[0].rect.y > pos[1]:
+                b = pos[1]'''
+            # self.rect = self.image.get_rect()
+            # self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
+            pygame.draw.line(self.image, (255, 0, 0),
+                             (self.ports[0].rect.x, self.ports[0].rect.y),
+                             (self.ports[1].rect.x, self.ports[1].rect.y), 5)
         self.image = self.image.convert()
         colorkey = self.image.get_at((self.rect.width - 10, 0))
         self.image.set_colorkey(colorkey)
@@ -449,27 +405,38 @@ class Wiresprites(pygame.sprite.Group):
     def move(self, pos):
         for sprite in self.sprites():
             sprite.move(pos)
+    def killed(self, trash):
+        for sprite in self.sprites():
+            if pygame.sprite.collide_mask(sprite, trash):
+                sprite.killed()
+
 
 
 class Port(pygame.sprite.Sprite):
     def __init__(self, pos, group_ports, master, znak=None):
         super().__init__(group_ports)
         self.master = master
-        self.image = pygame.Surface([1, 1])
+        radius = 10
+        self.image = pygame.Surface((2 * radius, 2 * radius),
+                                    pygame.SRCALPHA, 32)
         self.pos = [int(i) for i in pos.split(", ")]
-        self.rect = pygame.Rect(self.master.rect.x, self.master.rect.y, 1, 1)
-        self.pos = [self.rect.x, self.rect.y]
+        self.rect = pygame.Rect(self.master.rect.x + self.pos[0] - radius, self.master.rect.y + self.pos[1] - radius, 2 * 10, 2 * 10)
+        pygame.draw.circle(self.image, pygame.Color("red"),
+                           (radius, radius), radius)
+        #self.pos = [self.rect.x, self.rect.y]
         self.znak = znak
         self.users = []
 
     def update(self):
-        self.rect = pygame.Rect(self.master.rect.x, self.master.rect.y, 1, 1)
-        print(4444)
+        self.rect.x, self.rect.y = self.master.rect.x + self.pos[0] - 10, self.master.rect.y + self.pos[1] - 10
+        for i in self.users:
+            for y in i.ports:
+                y = self
 
     def down_event(self, pos, sprite):
         print(self.pos, pos)
         r = math.sqrt(
-            (self.pos[0] - pos[0]) ** 2 + ((self.pos[1] - pos[1]) ** 2))
+            (self.rect.x - pos[0]) ** 2 + ((self.rect.y - pos[1]) ** 2))
         if r <= 25:
             return r
 
@@ -533,6 +500,8 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
             self.rect.y = 0
         elif HEIGHT - 30 < pos[1] - self.dy:
             self.rect.y = HEIGHT - 30
+        #for i in self.ports:
+        #    i.master = self
 
 
 class Elementsprites(pygame.sprite.Group):
@@ -603,8 +572,6 @@ def game_screen():
         Border(sprite, 200 + i * 50, 0, 2, HEIGHT)
     for i in range(HEIGHT // 50 + 1):
         Border(sprite, 200, i * 50, WIDTH, 2)
-    # camera=Camera()
-    mouse_down = False
     elem = None
     wire = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect(
@@ -615,19 +582,17 @@ def game_screen():
         time_delta = clock.tick(60) / 1000
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                conf_dialog = pygame_gui.windows.UIConfirmationDialog(
+                pygame_gui.windows.UIConfirmationDialog(
                     rect=pygame.Rect((250, 200), (300, 200)), manager=manage,
                     window_title="Выход",
                     action_long_desc='Вы хотите выйти?', action_short_name='Да',
                     blocking=False)
             elif event.type == pygame.USEREVENT:
-                if event.user_type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
-                    print(event.text)
-                elif event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
+                if event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
                     terminate()
                 elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element in buttons.keys():
-                        element_sprites.add(
+                        all_sprites.add(
                             Element(element_sprites, port_sprites,
                                     data.select(['*'],
                                                 'Elements',
@@ -638,6 +603,7 @@ def game_screen():
                                         0]))
                     elif event.ui_element == wire:
                         wires = Wire(wire_sprites, screen)
+                        all_sprites.add(wires)
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     color = (0, 0, 0)
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
@@ -647,21 +613,21 @@ def game_screen():
                 elem = element_sprites.down(event.pos)
                 if event.button == 3 and elem is not None:
                     elem.show()
-                    print(123, elem == trash)
                 if elem is not None:
                     trash.down = True
                 if wires is not None:
                     port = port_sprites.down(event.pos)
                     if port is not None:
                         wires.point(port)
-                        # wires = None
+                    if len(wires.ports) == 2:
+                        wires = None
             elif event.type == pygame.MOUSEBUTTONUP and elem is not None:
                 elem.down = False
                 trash.down = False
                 elem = None
-            elif event.type == pygame.MOUSEMOTION and elem is not None and elem.down:
+            elif event.type == pygame.MOUSEMOTION:
                 wire_sprites.move(event.pos)
-                if wires is None or elem == trash:
+                if wires is None and elem is not None and elem.down:
                     elem.move(event.pos)
                 '''camera.update(player)
                     for sprite in all_sprites:
@@ -672,12 +638,15 @@ def game_screen():
         sprite.draw(screen)
         wire_sprites.draw(screen)
         element_sprites.killed(trash)
+        wire_sprites.killed(trash)
+        wire_sprites.update()
         port_sprites.draw(screen)
+        port_sprites.update()
         element_sprites.draw(screen)
+        port_sprites.draw(screen)
         manage.draw_ui(window_surface)
         all_sprites.draw(screen)
         all_sprites.update()
-        # screen.fill((0, 150, 50))
         pygame.display.flip()
 
 
@@ -696,24 +665,18 @@ if __name__ == "__main__":
 pygame.quit()
 
 '''
-class Wire(pygame.sprite.Sprite):
-    def __init__(self, group):
-        super().__init__(group)
-    def first_point(self, element):
-        self.image = pygame.Surface([10, 10])
-        self.rect = pygame.Rect(element[self][0], element[self][1], 10, 10)
-        pygame.draw.line(self.image, (255, 0, 0), (element[self][0], element[self][1], 10, 10), 3)
-        #self.type, self.title, self.voltage, self.image_off, self.image_on, self.health = args
-        # self.voltage =
-        self.health = 100
-        # self.image =
-        self.rect = self.image.get_rect()
-        self.mask = pygame.mask.from_surface(self.image)
-        #self.rect.x, self.rect.y = random.randrange(200, WIDTH - self.rect.width), random.randrange(0, HEIGHT - self.rect.height)
-        #while len(pygame.sprite.spritecollide(self, group, False)) - 1:
-        #    self.rect.x, self.rect.y = random.randrange(200, WIDTH - self.rect.width), random.randrange(0, HEIGHT - self.rect.height)
-        #self.down = False
-        #self.dx, self.dy = 0, 0
-    def update(self, pos):
-        self.rect.width = pos[0] - self.rect.x
-        self.rect.height = pos[1] - self.rect.y'''
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+    # позиционировать камеру на объекте target
+    def update(self, target):
+        self.dx = self.x - target.rect.x
+        self.dy = self.y - target.rect.y
+        self.x, self.y = target.rect.x + self.dx, target.rect.y + self.dy
+'''
