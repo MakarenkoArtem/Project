@@ -347,6 +347,9 @@ class Wire(pygame.sprite.Sprite):
 
     def point(self, port):
         if len(self.ports) < 2:
+            pygame.mixer.music.load("data/sound/click.mp3")
+            pygame.mixer.music.play()
+            pygame.mixer.music.set_volume(1.0)
             port.join = 0  # запускает анимацию присоединения
             self.ports.append(port)
             port.users.append(self)
@@ -524,6 +527,10 @@ class Allsprites(pygame.sprite.Group):
         for sprite in self.sprites():
             if pygame.sprite.collide_mask(sprite, trash) and sprite != trash:
                 sprite.killed()
+                pygame.mixer.music.load("data/sound/zvuk_trash.mp3")
+                pygame.mixer.music.play()
+                pygame.mixer.music.set_volume(1.0)
+
 
 
 class Elementsprites(pygame.sprite.Group):
@@ -604,6 +611,7 @@ def game_screen():
                     blocking=False)
             elif event.type == pygame.USEREVENT:
                 if event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
+                    pygame.mixer.music.stop()
                     terminate()
                 elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element in buttons.keys():
