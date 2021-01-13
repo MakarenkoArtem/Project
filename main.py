@@ -286,27 +286,23 @@ class AnimatedSprite(pygame.sprite.Sprite):
             self.rect.x, self.rect.y = WIDTH - 60, HEIGHT - 65
 
     def down_event(self, pos, sprite):
-        if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[
-            1] <= pos[1] <= self.rect[1] + self.rect[3]:
+        if pygame.sprite.collide_mask(self, sprite):
             self.down = True
             self.dx = pos[0] - self.rect[0]
             self.dy = pos[1] - self.rect[1]
-            self.sprite = sprite
         return self.down
 
     def move(self, pos):
         if self.down:
             self.rect.x, self.rect.y = pos[0] - self.dx, pos[1] - self.dy
-        else:
-            self.rect.x, self.rect.y = WIDTH - 60, HEIGHT - 65
-        if 200 > pos[0]:
+        if 200 > pos[0] - self.dx:
             self.rect.x = 200
-        elif WIDTH - 20 < pos[0] + self.dx:
-            self.rect.x = WIDTH - 20 - self.dx
-        if 0 > pos[1]:
+        elif WIDTH < pos[0] - self.dx + self.rect.width:
+            self.rect.x = WIDTH - self.rect.width
+        if 0 > pos[1] - self.dy:
             self.rect.y = 0
-        elif HEIGHT - 30 < pos[1] + self.dy:
-            self.rect.y = HEIGHT - 30 - self.dy
+        elif HEIGHT < pos[1] - self.dy + self.rect.height:
+            self.rect.y = HEIGHT - self.rect.height
 
 
 buttons = {}
@@ -327,7 +323,13 @@ def change_group(group, manage):
             manager=manage, object_id=group + "_" + str(i))] = elements[i]
 
     print(buttons)
-
+class Check(pygame.sprite.Sprite):
+    def __init__(self, pos, group):
+        super().__init__(group)
+        self.image = pygame.Surface([1, 1])
+        self.rect = pygame.Rect(pos[0], pos[1], 1, 1)
+    def down_event(self, pos, sprite):
+        return False
 
 class Wire(pygame.sprite.Sprite):
     def __init__(self, group, background):
@@ -342,21 +344,22 @@ class Wire(pygame.sprite.Sprite):
         self.image = self.image.convert()
         colorkey = self.image.get_at((self.rect.width - 1, 0))
         self.image.set_colorkey(colorkey)
+        self.down = False
     def down_event(self, pos, sprite):
-        if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[
-            1] <= pos[1] <= self.rect[1] + self.rect[
-            3]:
-            self.down = True
-            self.dx = pos[0] - self.rect[0]
-            self.dy = pos[1] - self.rect[1]
-            self.sprite = sprite
-        return self.down
+        if pygame.sprite.collide_mask(self, sprite):
+            return True
 
     def show(self):
+        app = QApplication(sys.argv)
         color = QColorDialog.getColor()
+        print(color)
         if color.isValid():
-            self.button_1.setStyleSheet(
-                "background-color: {}".format(color.name()))
+            print(color.name())
+            self.color = color.name()
+        if self.color == '#000000':
+            self.color = '#000001'
+        app.exit()
+        self.move([200, 100])
 
     # def update(self):
     #    if len(self.ports) == 1:
@@ -415,7 +418,7 @@ class Portsprites(pygame.sprite.Group):
         port = None
         for sprite in self.sprites():
             if isinstance(sprite, Port):
-                r = sprite.down_event(pos, sprite)
+                r = sprite.down_event(pos)
                 print(r)
                 if r is not None and (radius is None or r < radius):
                     radius, port = r, sprite
@@ -461,7 +464,7 @@ class Port(pygame.sprite.Sprite):
             pygame.draw.circle(self.image, pygame.Color("white"),
                                (self.radius, self.radius), self.join, width=2)
 
-    def down_event(self, pos, sprite):
+    def down_event(self, pos):
         r = math.sqrt(
             (self.rect.x - pos[0]) ** 2 + ((self.rect.y - pos[1]) ** 2))
         if r <= 25:
@@ -507,26 +510,23 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
         app.exit()
 
     def down_event(self, pos, sprite):
-        if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[
-            1] <= pos[1] <= self.rect[1] + self.rect[
-            3]:
+        if pygame.sprite.collide_mask(self, sprite):
             self.down = True
             self.dx = pos[0] - self.rect[0]
             self.dy = pos[1] - self.rect[1]
-            self.sprite = sprite
         return self.down
 
     def move(self, pos):
         if self.down:
             self.rect.x, self.rect.y = pos[0] - self.dx, pos[1] - self.dy
-        if 200 > pos[0]:
+        if 200 > pos[0] - self.dx:
             self.rect.x = 200
-        elif WIDTH - 20 < pos[0] - self.dx:
-            self.rect.x = WIDTH - 20
-        if 0 > pos[1]:
+        elif WIDTH < pos[0] - self.dx + self.rect.width:
+            self.rect.x = WIDTH - self.rect.width
+        if 0 > pos[1] - self.dy:
             self.rect.y = 0
-        elif HEIGHT - 30 < pos[1] - self.dy:
-            self.rect.y = HEIGHT - 30
+        elif HEIGHT < pos[1] - self.dy + self.rect.height:
+            self.rect.y = HEIGHT - self.rect.height
         # for i in self.ports:
         #    i.master = self
 
@@ -539,27 +539,33 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
 class Allsprites(pygame.sprite.Group):
     def killed(self, trash):
         for sprite in self.sprites():
-            print(sprite.rect)
             if pygame.sprite.collide_mask(sprite, trash) and sprite != trash:
                 sprite.killed()
                 pygame.mixer.music.load("data/sound/sound_basket.mp3")
                 pygame.mixer.music.play()
                 pygame.mixer.music.set_volume(1.0)
     def show(self, pos):
+        point = Check(pos, self)
+        print("="*50)
         for sprite in self.sprites():
-            if isinstance(sprite, Element) or isinstance(sprite,
-                                                         Wire):
-                if sprite.down_event(pos, sprite):
-                    return sprite
+            if isinstance(sprite, Element) or isinstance(sprite, Wire):
+                print(sprite.rect, point.rect)
+                if sprite.down_event(pos, point):
+                    print(1)
+                    sprite.show()
+                    sprite.down = False
+                    break
+        point.kill()
 
 
 class Elementsprites(pygame.sprite.Group):
     def down(self, pos):
+        point = Check(pos, self)
         for sprite in self.sprites():
-            if isinstance(sprite, Element) or isinstance(sprite,
-                                                         AnimatedSprite):
-                if sprite.down_event(pos, sprite):
-                    return sprite
+            if sprite.down_event(pos, point):
+                point.kill()
+                return sprite
+
 
 
 class Border(pygame.sprite.Sprite):
@@ -644,19 +650,18 @@ def game_screen():
                     print(event.text)
                     change_group(event.text, manage)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                elem = element_sprites.down(event.pos)
                 if event.button == 3:
-                    elem = all_sprites.show(event.pos)
+                    all_sprites.show(event.pos)
+                else:
+                    elem = element_sprites.down(event.pos)
                     if elem is not None:
-                        elem.show()
-                if elem is not None:
-                    basket.down = True
-                if wires is not None:
-                    port = port_sprites.down(event.pos)
-                    if port is not None:
-                        wires.point(port)
-                    if len(wires.ports) == 2:
-                        wires = None
+                        basket.down = True
+                    if wires is not None:
+                        port = port_sprites.down(event.pos)
+                        if port is not None:
+                            wires.point(port)
+                        if len(wires.ports) == 2:
+                            wires = None
             elif event.type == pygame.MOUSEBUTTONUP and elem is not None:
                 elem.down = False
                 basket.down = False
