@@ -9,15 +9,15 @@ from enum import Enum
 
 try:
     from PyQt5.QtWidgets import QApplication, QDialog
-    from PyQt5 import QtCore, QtWidgets
-    from PyQt5.QtGui import QPixmap
 except ModuleNotFoundError:
     import pip
 
     pip.main(['install', "PyQt5"])
     from PyQt5.QtWidgets import QApplication, QDialog
-    from PyQt5 import QtCore, QtWidgets
-    from PyQt5.QtGui import QPixmap
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QColorDialog
+
 try:
     import pygame_gui
 except ModuleNotFoundError:
@@ -334,12 +334,29 @@ class Wire(pygame.sprite.Sprite):
         super().__init__(group)
         self.ports = []
         self.image = pygame.Surface([WIDTH, HEIGHT])
+        self.color = (
+            random.randrange(255), random.randrange(255), random.randrange(255))
         # self.rect = pygame.Rect(-11, -10, 3, 3)
         self.rect = self.image.get_rect()
-        pygame.draw.line(self.image, (255, 0, 0), (-10, -10), (-9, -9), 5)
+        pygame.draw.line(self.image, self.color, (-10, -10), (-9, -9), 5)
         self.image = self.image.convert()
         colorkey = self.image.get_at((self.rect.width - 1, 0))
         self.image.set_colorkey(colorkey)
+    def down_event(self, pos, sprite):
+        if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[
+            1] <= pos[1] <= self.rect[1] + self.rect[
+            3]:
+            self.down = True
+            self.dx = pos[0] - self.rect[0]
+            self.dy = pos[1] - self.rect[1]
+            self.sprite = sprite
+        return self.down
+
+    def show(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.button_1.setStyleSheet(
+                "background-color: {}".format(color.name()))
 
     # def update(self):
     #    if len(self.ports) == 1:
@@ -364,34 +381,31 @@ class Wire(pygame.sprite.Sprite):
 
     def move(self, pos):
         if len(self.ports) == 1:
+            global HEIGHT, WIDTH
+            pos = list(pos)
+            if 200 > pos[0]:
+                pos[0] = 200
+            elif WIDTH < pos[0]:
+                pos[0] = WIDTH
+            if 0 > pos[1]:
+                pos[1] = 0
+            elif HEIGHT < pos[1]:
+                pos[1] = HEIGHT
             self.image = pygame.Surface([WIDTH, HEIGHT])
-            '''a, b = self.ports[0].rect.x, self.ports[0].rect.y
-            if self.ports[0].rect.x > pos[0]:
-                a = pos[0]
-            if self.ports[0].rect.y > pos[1]:
-                b = pos[1]'''
-            # self.rect = self.image.get_rect()
-            # self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
-            pygame.draw.line(self.image, (255, 0, 0),
+            pygame.draw.line(self.image, self.color,
                              (self.ports[0].rect.x + self.ports[0].radius,
                               self.ports[0].rect.y + self.ports[0].radius),
                              (pos[0], pos[1]), 5)
         elif len(self.ports) == 2:
             self.image = pygame.Surface([WIDTH, HEIGHT])
-            '''a, b = self.ports[0].rect.x, self.ports[0].rect.y
-            if self.ports[0].rect.x > pos[0]:
-                a = pos[0]
-            if self.ports[0].rect.y > pos[1]:
-                b = pos[1]'''
-            # self.rect = self.image.get_rect()
-            # self.rect = pygame.Rect(a, b, 10 + abs(self.ports[0].rect.x - pos[0]), abs(self.ports[0].rect.y - pos[1]))
-            pygame.draw.line(self.image, (255, 0, 0),
+            pygame.draw.line(self.image, self.color,
                              (self.ports[0].rect.x + self.ports[0].radius,
                               self.ports[0].rect.y + self.ports[0].radius),
                              (self.ports[1].rect.x + self.ports[1].radius,
                               self.ports[1].rect.y + self.ports[1].radius), 5)
         self.image = self.image.convert()
-        colorkey = self.image.get_at((self.rect.width - 10, 0))
+        colorkey = self.image.get_at((0, 0))
+        print(colorkey)
         self.image.set_colorkey(colorkey)
 
 
@@ -525,12 +539,18 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
 class Allsprites(pygame.sprite.Group):
     def killed(self, trash):
         for sprite in self.sprites():
+            print(sprite.rect)
             if pygame.sprite.collide_mask(sprite, trash) and sprite != trash:
                 sprite.killed()
-                pygame.mixer.music.load("data/sound/zvuk_trash.mp3")
+                pygame.mixer.music.load("data/sound/sound_basket.mp3")
                 pygame.mixer.music.play()
                 pygame.mixer.music.set_volume(1.0)
-
+    def show(self, pos):
+        for sprite in self.sprites():
+            if isinstance(sprite, Element) or isinstance(sprite,
+                                                         Wire):
+                if sprite.down_event(pos, sprite):
+                    return sprite
 
 
 class Elementsprites(pygame.sprite.Group):
@@ -556,24 +576,17 @@ def draw(background):
     pygame.draw.rect(background, (0, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
 
-    '''for i in range(29):
-        for y in range(26):
-            pygame.draw.rect(background, (150, 150, 150),
-                             (200 + i * 35, y * 35, 35, 35), width=1)'''
-
 
 def game_screen():
     global state
     pygame.display.set_caption("Start")
     window_surface = pygame.display.set_mode((WIDTH, HEIGHT))
     background = pygame.Surface((WIDTH, HEIGHT))
-    # draw(background)
     manage = pygame_gui.UIManager((WIDTH, HEIGHT), 'data/theme.json')
     res = data.select(['Type'], 'Groups')
-    group = pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
+    pygame_gui.elements.ui_drop_down_menu.UIDropDownMenu(
         options_list=res, starting_option=res[0],
-        relative_rect=pygame.Rect((15, 10), (150, 25)), manager=manage
-    )
+        relative_rect=pygame.Rect((15, 10), (150, 25)), manager=manage)
     change_group(res[0], manage)
     pygame.draw.rect(background, (50, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
@@ -585,9 +598,10 @@ def game_screen():
     element_sprites = Elementsprites()
     port_sprites = Portsprites()
     wire_sprites = Wiresprites()
-    trash = AnimatedSprite(element_sprites, load_image("data/basket.png"), 2, 1,
-                           WIDTH - 60, HEIGHT - 65)
-    all_sprites.add(trash)
+    basket = AnimatedSprite(element_sprites, load_image("data/basket.png"), 2,
+                            1,
+                            WIDTH - 60, HEIGHT - 65)
+    all_sprites.add(basket)
     sprite = pygame.sprite.Group()
 
     for i in range(WIDTH // 50 + 1):
@@ -617,27 +631,26 @@ def game_screen():
                     if event.ui_element in buttons.keys():
                         all_sprites.add(
                             Element(element_sprites, port_sprites, all_sprites,
-                                    data.select(['*'],
-                                                'Elements',
-                                                'and',
+                                    data.select(['*'], 'Elements', 'and',
                                                 ['image_on',
-                                                 buttons[
-                                                     event.ui_element]])[
+                                                 buttons[event.ui_element]])[
                                         0]))
                     elif event.ui_element == wire:
                         wires = Wire(wire_sprites, screen)
                         all_sprites.add(wires)
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
-                    color = (0, 0, 0)
+                    pass
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                     print(event.text)
                     change_group(event.text, manage)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 elem = element_sprites.down(event.pos)
-                if event.button == 3 and elem is not None:
-                    elem.show()
+                if event.button == 3:
+                    elem = all_sprites.show(event.pos)
+                    if elem is not None:
+                        elem.show()
                 if elem is not None:
-                    trash.down = True
+                    basket.down = True
                 if wires is not None:
                     port = port_sprites.down(event.pos)
                     if port is not None:
@@ -646,19 +659,16 @@ def game_screen():
                         wires = None
             elif event.type == pygame.MOUSEBUTTONUP and elem is not None:
                 elem.down = False
-                trash.down = False
+                basket.down = False
                 elem = None
             elif event.type == pygame.MOUSEMOTION:
                 wire_sprites.move(event.pos)
                 if wires is None and elem is not None and elem.down:
                     elem.move(event.pos)
-                '''camera.update(player)
-                    for sprite in all_sprites:
-                        camera.apply(sprite)'''
             manage.process_events(event)
         manage.update(time_delta)
         window_surface.blit(background, (0, 0))
-        all_sprites.killed(trash)
+        all_sprites.killed(basket)
         sprite.draw(screen)
         element_sprites.draw(screen)
         port_sprites.draw(screen)
