@@ -334,7 +334,7 @@ def change_group(group, manage):
     elements = data.select(['image_on'], 'Elements', 'and', ["type", group])
     for i in range(len(elements)):
         buttons[pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((15 + (i + 1) // 2 * 75, i // 2 * 100 + 40), (65, 95)),
+            relative_rect=pygame.Rect((15 + i % 2 * 75, i // 2 * 100 + 40), (65, 95)),
             text='', manager=manage, object_id=group + "_" + str(i))] = elements[i]
 
 
@@ -557,7 +557,7 @@ class Element(pygame.sprite.Sprite):  # класс элементов
             self.ports[i].sign = self.sign
             self.ports[i].check(True)
         if self.sign == self and not bool:
-            if self.ports[0] == port: # если провод вернулся в начало
+            if self.ports[0] == port:  # если провод вернулся в начало
                 self.list = []
         print(self.list)
 
@@ -606,12 +606,13 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         if self.health <= 0:
             self.health = 0
             create_particles(
-                (self.rect.x + self.rect.width // 2, self.rect.y + self.rect.height // 2), all_sprites)
+                (self.rect.x + self.rect.width // 2, self.rect.y + self.rect.height // 2),
+                all_sprites)
 
 
 def create_particles(position, all_sprites):
     # количество создаваемых частиц
-    particle_count = 20
+    particle_count = 17
     # возможные скорости
     numbers = range(-5, 6)
     for _ in range(particle_count):
@@ -687,7 +688,7 @@ class Elementsprites(pygame.sprite.Group):
                         sprite.list = []
                         break
                 for i in sprite.list:
-                    i.power(sprite.voltage, self)
+                    i.power(sprite.voltage // (len(sprite.list) - 1), self)
 
     def stop(self):
         for sprite in self.sprites():
@@ -722,8 +723,6 @@ def game_screen():
     change_group(res[0], manage)
     pygame.draw.rect(background, (50, 150, 50),
                      (200, 0, WIDTH - 200, HEIGHT), width=0)
-    '''entry = pygame_gui.elements.UITextEntryLine(
-        relative_rect=pygame.Rect((350, 100), (100, 25)), manager=manage)'''
     clock = pygame.time.Clock()
     run = True
     all_sprites = Allsprites()
@@ -838,20 +837,3 @@ if __name__ == "__main__":
     while True:
         state = screen_funcs[state]()
 pygame.quit()
-
-'''
-class Camera:
-    # зададим начальный сдвиг камеры
-    def __init__(self):
-        self.dx = 0
-        self.dy = 0
-    # сдвинуть объект obj на смещение камеры
-    def apply(self, obj):
-        obj.rect.x += self.dx
-        obj.rect.y += self.dy
-    # позиционировать камеру на объекте target
-    def update(self, target):
-        self.dx = self.x - target.rect.x
-        self.dy = self.y - target.rect.y
-        self.x, self.y = target.rect.x + self.dx, target.rect.y + self.dy
-'''
