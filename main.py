@@ -48,8 +48,6 @@ except ModuleNotFoundError:
 class GameStates(Enum):
     START_SCREEN = 1
     GAME_SCREEN = 2
-    GAME_ON_PAUSE_SCREEN = 3
-    STOP_SCREEN = 4
 
 
 size = get_monitors()[0]
@@ -170,12 +168,12 @@ def loading(n):
 def start_screen():
     intro_text = ["  СПРАВКА", "",
                   "Правила работы в приложении:",
-                  "  Не перенагружайте цепи!!!", "  Сохраняйте проект"]
+                  "  Не перенагружайте цепи!!!", "  Удачной работы"]
 
     fon = pygame.transform.scale(load_image('data/fon22.jpg', colorkey=None),
                                  (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 40)
+    font = pygame.font.Font(None, HEIGHT * WIDTH // 31500)
     text_coord = WIDTH * 0.1
     for line in intro_text:
         string_rendered = font.render(line, 1, (50, 50, 150))
@@ -186,7 +184,7 @@ def start_screen():
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
     clock = pygame.time.Clock()
-    loading(-1)
+    loading(-1)  # подготовка окна загрузки
     n = 0
     start = time.time()
     mistake = False
@@ -209,8 +207,8 @@ def start_screen():
             mistake_rect.x = 0
             screen.blit(mistake_rendered, mistake_rect)
 
-        if (time.time() - start > random.randrange(1, 5) or push) and n < CHECKS \
-                and not mistake:
+        if (time.time() - start > random.randrange(1,
+                                                   5) or push) and n < CHECKS and not mistake:  # новая проверка
             start = time.time()
             message = loading(n)
             if message is not None:
@@ -221,8 +219,7 @@ def start_screen():
         clock.tick(FPS)
 
 
-class Info(QDialog,
-           design_pyqt5.Ui_Dialog):  # Класс виджета информации о программе
+class Info(QDialog, design_pyqt5.Ui_Dialog):  # Класс виджета информации о программе
     def __init__(self, type, title, voltage, image_text, health, text):
         super(Info, self).__init__()
         super().__init__()
@@ -239,6 +236,7 @@ class Info(QDialog,
         self.timer.timeout.connect(self.image)
         self.timer.start(900)
         self.pushButton.clicked.connect(self.run)
+
     def run(self):
         self.close()
 
@@ -264,13 +262,11 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.dx, self.dy = 0, 0
 
     def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
+                self.frames.append(sheet.subsurface(pygame.Rect(frame_location, self.rect.size)))
 
     def show(self):
         pass
@@ -316,38 +312,39 @@ def change_group(group, manage):
     for i in buttons.keys():
         i.kill()
     buttons = {}
-    d = {}
     elements = data.select(['image_on'], 'Elements', 'and', ["type", group])
     for i in range(len(elements)):
         buttons[pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(
-                (15 + (i + 1) // 2 * 75, i // 2 * 100 + 40), (65, 95)),
-            text='',
-            manager=manage, object_id=group + "_" + str(i))] = elements[i]
+            relative_rect=pygame.Rect((15 + (i + 1) // 2 * 75, i // 2 * 100 + 40), (65, 95)),
+            text='', manager=manage, object_id=group + "_" + str(i))] = elements[i]
 
-    print(buttons)
+
 class Check(pygame.sprite.Sprite):
     def __init__(self, pos, group):
         super().__init__(group)
         self.image = pygame.Surface([1, 1])
         self.rect = pygame.Rect(pos[0], pos[1], 1, 1)
+
     def down_event(self, pos, sprite):
         return False
 
+
 class Wire(pygame.sprite.Sprite):
-    def __init__(self, group, background):
+    def __init__(self, group):
         super().__init__(group)
         self.ports = []
         self.image = pygame.Surface([WIDTH, HEIGHT])
         self.color = (
             random.randrange(255), random.randrange(255), random.randrange(255))
-        # self.rect = pygame.Rect(-11, -10, 3, 3)
+        if self.color == (0, 0, 0):
+            self.color = '#000001'
         self.rect = self.image.get_rect()
         pygame.draw.line(self.image, self.color, (-10, -10), (-9, -9), 5)
         self.image = self.image.convert()
-        colorkey = self.image.get_at((self.rect.width - 1, 0))
-        self.image.set_colorkey(colorkey)
+        #colorkey = self.image.get_at((self.rect.width - 1, 0))
+        self.image.set_colorkey('#000000')
         self.down = False
+
     def down_event(self, pos, sprite):
         if pygame.sprite.collide_mask(self, sprite):
             return True
@@ -364,7 +361,7 @@ class Wire(pygame.sprite.Sprite):
 
     def point(self, port):
         if len(self.ports) < 2:
-            pygame.mixer.music.load("data/sound/click.mp3")
+            pygame.mixer.music.load("data/sound/click.mp3") # звук присоединения
             pygame.mixer.music.play()
             pygame.mixer.music.set_volume(1.0)
             port.join = 0  # запускает анимацию присоединения
@@ -404,8 +401,8 @@ class Wire(pygame.sprite.Sprite):
                              (self.ports[1].rect.x + self.ports[1].radius,
                               self.ports[1].rect.y + self.ports[1].radius), 5)
         self.image = self.image.convert()
-        colorkey = self.image.get_at((0, 0))
-        self.image.set_colorkey(colorkey)
+        #colorkey = self.image.get_at((0, 0))
+        self.image.set_colorkey('#000000')
 
 
 class Portsprites(pygame.sprite.Group):
@@ -419,10 +416,10 @@ class Portsprites(pygame.sprite.Group):
                 if r is not None and (radius is None or r < radius):
                     radius, port = r, sprite
         return port
+
     def paint(self, bool):
         for sprite in self.sprites():
             sprite.paint = bool
-
 
 
 class Wiresprites(pygame.sprite.Group):
@@ -431,7 +428,7 @@ class Wiresprites(pygame.sprite.Group):
             sprite.move(pos)
 
 
-class Port(pygame.sprite.Sprite):
+class Port(pygame.sprite.Sprite): # класс портов для соединения проводов
     def __init__(self, pos, group_ports, master, znak=None):
         super().__init__(group_ports)
         self.master = master
@@ -461,7 +458,7 @@ class Port(pygame.sprite.Sprite):
                                        1] - self.radius * 2
         if self.paint:
             pygame.draw.circle(self.image, pygame.Color("grey"),
-                            (self.radius, self.radius), 10, width=2)
+                               (self.radius, self.radius), 10, width=2)
         if self.radius > self.join:
             self.join += 1
             pygame.draw.circle(self.image, pygame.Color("white"),
@@ -474,18 +471,16 @@ class Port(pygame.sprite.Sprite):
             return r
 
 
-class Element(pygame.sprite.Sprite):  # Надо работать здесь
+class Element(pygame.sprite.Sprite):  # класс элементов
     def __init__(self, group, group_ports, args):
         super().__init__(group)
-        self.text, self.type, self.title, self.voltage, self.image_on, self.image_off, self.health = args[
-                                                                                                     :7]
+        self.text, self.type, self.title, self.voltage, self.image_on, self.image_off, self.health = args[:7]
         self.voltage = float(self.voltage)
         if self.text is not None:
             self.text = self.text.rstrip(".")
             self.text = random.choice(self.text.split(".")).strip()
         else:
             self.text = ''
-        print(self.text)
         if self.health is None:
             self.health = 100
         self.image_text = ["data/images/" + self.image_on,
@@ -514,8 +509,8 @@ class Element(pygame.sprite.Sprite):  # Надо работать здесь
     def show(self):
         app = QApplication(sys.argv)
         info = Info(self.type, self.title, self.voltage, self.image_text,
-             self.health,
-             self.text)
+                    self.health,
+                    self.text)
         info.exec_()  # Вызов класс виджета информации о программе
         self.voltage, self.title = info.doubleSpinBox.value(), info.lineEdit.text()
         self.health, self.text = info.spinBox.value(), info.textEdit.toPlainText()
@@ -553,12 +548,13 @@ class Allsprites(pygame.sprite.Group):
         for sprite in self.sprites():
             if pygame.sprite.collide_mask(sprite, trash) and sprite != trash:
                 sprite.killed()
-                pygame.mixer.music.load("data/sound/sound_basket.mp3")
+                pygame.mixer.music.load("data/sound/sound_basket.mp3") # звук удаления
                 pygame.mixer.music.play()
                 pygame.mixer.music.set_volume(1.0)
+
     def show(self, pos):
         point = Check(pos, self)
-        print("="*50)
+        print("=" * 50)
         for sprite in self.sprites():
             if isinstance(sprite, Element) or isinstance(sprite, Wire):
                 print(sprite.rect, point.rect)
@@ -579,9 +575,7 @@ class Elementsprites(pygame.sprite.Group):
                 return sprite
 
 
-
-class Border(pygame.sprite.Sprite):
-    # строго вертикальный или строго горизонтальный отрезок
+class Border(pygame.sprite.Sprite): # строго вертикальный или строго горизонтальный отрезок
     def __init__(self, group, x1, y1, x2, y2):
         super().__init__(group)
         self.image = pygame.Surface([x2, y2])
@@ -621,7 +615,6 @@ def game_screen():
                             WIDTH - 60, HEIGHT - 65)
     all_sprites.add(basket)
     sprite = pygame.sprite.Group()
-
     for i in range(WIDTH // 50 + 1):
         Border(sprite, 200 + i * 50, 0, 2, HEIGHT)
     for i in range(HEIGHT // 50 + 1):
@@ -648,18 +641,16 @@ def game_screen():
                 elif event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element in buttons.keys():
                         args = list(data.select(['*'], 'Elements', 'and',
-                                           ['image_on', buttons[event.ui_element]])[0])
+                                                ['image_on', buttons[event.ui_element]])[0])
                         args = list(data.select(['text', 'Description'], 'Groups', 'and',
-                                               ['type', args[0]])[0]) + args[1:]
-                        print(args)
+                                                ['type', args[0]])[0]) + args[1:]
                         all_sprites.add(Element(element_sprites, port_sprites, args))
                     elif event.ui_element == wire:
-                        wires = Wire(wire_sprites, screen)
+                        wires = Wire(wire_sprites)
                         all_sprites.add(wires)
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     pass
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
-                    print(event.text)
                     change_group(event.text, manage)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3:
