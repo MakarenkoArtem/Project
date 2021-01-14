@@ -620,7 +620,7 @@ def create_particles(position, all_sprites):
 
 class Particle(pygame.sprite.Sprite):
     # сгенерируем частицы разного размера
-    fire = [load_image("data/star.png")]
+    fire = [load_image("data/spark.png")]
     for scale in (5, 10, 20):
         fire.append(pygame.transform.scale(fire[0], (scale, scale)))
 
