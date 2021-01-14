@@ -363,6 +363,12 @@ class Wire(pygame.sprite.Sprite):
         self.image.set_colorkey('#000000')
         self.down = False
 
+    def check(self, port):
+        for i in range(2):
+            if self.ports[i] != port:
+                self.ports[i].list = self.list
+                self.ports[i].check()
+
     def down_event(self, pos, sprite):
         if pygame.sprite.collide_mask(self, sprite):
             return True
@@ -450,7 +456,7 @@ class Port(pygame.sprite.Sprite):  # класс портов для соедин
     def __init__(self, pos, group_ports, master, znak=None):
         super().__init__(group_ports)
         self.master = master
-        self.radius = 25
+        self.radius, self.sign = 25, None
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
         self.pos = [int(i) + self.radius for i in pos.split(", ")]
@@ -462,6 +468,16 @@ class Port(pygame.sprite.Sprite):  # класс портов для соедин
         self.znak = znak
         self.users = []
         self.paint = False
+
+    def check(self, bool=False):
+        if bool:
+            for i in self.users:
+                i.list = self.list
+                i.check(self)
+        else:
+            self.master.list = self.list
+            self.master.check(port=self)
+        print("Port:", self.list)
 
     def killed(self):
         for i in self.users:
@@ -524,6 +540,21 @@ class Element(pygame.sprite.Sprite):  # класс элементов
                           Port(args[8], group_ports, self)]
         self.down = False
         self.dx, self.dy = 0, 0
+
+    def check(self, bool=False, port=None):
+        if bool:
+            self.list = []
+            self.sign = self
+        elif self.sign != self:
+            i = 0
+            if self.ports[0] == port:
+                i = 1
+            self.list.append(self)
+            self.ports[i].list = self.list
+            self.ports[i].sign = self.sign
+            self.ports[i].check()
+        print("Элемент:", self.list)
+
 
     def show(self):
         app = QApplication(sys.argv)
@@ -592,6 +623,13 @@ class Elementsprites(pygame.sprite.Group):
             if sprite.down_event(pos, point):
                 point.kill()
                 return sprite
+
+    def check(self):
+        for sprite in self.sprites():
+            if isinstance(sprite, Element) and sprite.type == 'Источники питания с постоянным током':
+                print(sprite.type)
+                sprite.check(True)
+                print(sprite.list)
 
 
 class Border(pygame.sprite.Sprite):  # строго вертикальный или строго горизонтальный отрезок
@@ -672,6 +710,7 @@ def game_screen():
                     elif event.ui_element == start_stop:
                         start_stop.kill()
                         play = not play
+                        print(play)
                         start_stop = pygame_gui.elements.UIButton(
                             relative_rect=pygame.Rect((WIDTH - 55, 75), (52, 52)), text='',
                             manager=manage, object_id=start_list[play])
@@ -705,6 +744,9 @@ def game_screen():
             port_sprites.paint(False)
         else:
             port_sprites.paint(True)
+        if play:
+            print(1234)
+            element_sprites.check()
         manage.update(time_delta)
         window_surface.blit(background, (0, 0))
         all_sprites.killed(basket)
