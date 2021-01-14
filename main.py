@@ -370,6 +370,7 @@ class Wire(pygame.sprite.Sprite):
             i = 1
         self.ports[i].list = self.list
         self.ports[i].sign = self.sign
+        print(self.list)
         self.ports[i].check()
 
     def down_event(self, pos, sprite):
@@ -439,7 +440,6 @@ class Portsprites(pygame.sprite.Group):
         for sprite in self.sprites():
             if isinstance(sprite, Port):
                 r = sprite.down_event(pos)
-                print(r)
                 if r is not None and (radius is None or r < radius):
                     radius, port = r, sprite
         return port
@@ -556,6 +556,10 @@ class Element(pygame.sprite.Sprite):  # класс элементов
             self.ports[i].list = self.list + [self]
             self.ports[i].sign = self.sign
             self.ports[i].check(True)
+        if self.sign == self and not bool:
+            if self.ports[0] == port: # если провод вернулся в начало
+                self.list = []
+        print(self.list)
 
     def show(self):
         app = QApplication(sys.argv)
@@ -631,7 +635,7 @@ class Particle(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = pos
 
         # гравитация будет одинаковой (значение константы)
-        self.gravity = 10
+        self.gravity = 0.75
 
     def update(self):
         # применяем гравитационный эффект:
@@ -743,7 +747,7 @@ def game_screen():
     start_list = {False: 'start', True: 'stop'}
     play = False
     while run:
-        time_delta = clock.tick(60) / 1000
+        time_delta = clock.tick(50) / 1000
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame_gui.windows.UIConfirmationDialog(
@@ -778,7 +782,6 @@ def game_screen():
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                     change_group(event.text, manage)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                print(event.pos)
                 if event.button == 3 and not play:
                     all_sprites.show(event.pos)
                 elif not play:
@@ -811,6 +814,7 @@ def game_screen():
         all_sprites.killed(basket)
         sprite.draw(screen)
         element_sprites.draw(screen)
+        element_sprites.update()
         port_sprites.draw(screen)
         port_sprites.update()
         wire_sprites.draw(screen)
