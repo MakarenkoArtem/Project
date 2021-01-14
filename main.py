@@ -66,6 +66,24 @@ JSON = {"wire": {
                 "data/wire.png"
         }
     }
+}, "start": {
+    "colours": {
+        "normal_bg": "#000000"},
+    "images": {
+        "normal_image": {
+            "path":
+                "data/start.png"
+        }
+    }
+}, "stop": {
+    "colours": {
+        "normal_bg": "#000000"},
+    "images": {
+        "normal_image": {
+            "path":
+                "data/stop.png"
+        }
+    }
 }
 }
 
@@ -341,7 +359,7 @@ class Wire(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         pygame.draw.line(self.image, self.color, (-10, -10), (-9, -9), 5)
         self.image = self.image.convert()
-        #colorkey = self.image.get_at((self.rect.width - 1, 0))
+        # colorkey = self.image.get_at((self.rect.width - 1, 0))
         self.image.set_colorkey('#000000')
         self.down = False
 
@@ -361,7 +379,7 @@ class Wire(pygame.sprite.Sprite):
 
     def point(self, port):
         if len(self.ports) < 2:
-            pygame.mixer.music.load("data/sound/click.mp3") # звук присоединения
+            pygame.mixer.music.load("data/sound/click.mp3")  # звук присоединения
             pygame.mixer.music.play()
             pygame.mixer.music.set_volume(1.0)
             port.join = 0  # запускает анимацию присоединения
@@ -401,7 +419,7 @@ class Wire(pygame.sprite.Sprite):
                              (self.ports[1].rect.x + self.ports[1].radius,
                               self.ports[1].rect.y + self.ports[1].radius), 5)
         self.image = self.image.convert()
-        #colorkey = self.image.get_at((0, 0))
+        # colorkey = self.image.get_at((0, 0))
         self.image.set_colorkey('#000000')
 
 
@@ -428,7 +446,7 @@ class Wiresprites(pygame.sprite.Group):
             sprite.move(pos)
 
 
-class Port(pygame.sprite.Sprite): # класс портов для соединения проводов
+class Port(pygame.sprite.Sprite):  # класс портов для соединения проводов
     def __init__(self, pos, group_ports, master, znak=None):
         super().__init__(group_ports)
         self.master = master
@@ -474,7 +492,8 @@ class Port(pygame.sprite.Sprite): # класс портов для соедин�
 class Element(pygame.sprite.Sprite):  # класс элементов
     def __init__(self, group, group_ports, args):
         super().__init__(group)
-        self.text, self.type, self.title, self.voltage, self.image_on, self.image_off, self.health = args[:7]
+        self.text, self.type, self.title, self.voltage, self.image_on, self.image_off, self.health = args[
+                                                                                                     :7]
         self.voltage = float(self.voltage)
         if self.text is not None:
             self.text = self.text.rstrip(".")
@@ -548,7 +567,7 @@ class Allsprites(pygame.sprite.Group):
         for sprite in self.sprites():
             if pygame.sprite.collide_mask(sprite, trash) and sprite != trash:
                 sprite.killed()
-                pygame.mixer.music.load("data/sound/sound_basket.mp3") # звук удаления
+                pygame.mixer.music.load("data/sound/sound_basket.mp3")  # звук удаления
                 pygame.mixer.music.play()
                 pygame.mixer.music.set_volume(1.0)
 
@@ -575,7 +594,7 @@ class Elementsprites(pygame.sprite.Group):
                 return sprite
 
 
-class Border(pygame.sprite.Sprite): # строго вертикальный или строго горизонтальный отрезок
+class Border(pygame.sprite.Sprite):  # строго вертикальный или строго горизонтальный отрезок
     def __init__(self, group, x1, y1, x2, y2):
         super().__init__(group)
         self.image = pygame.Surface([x2, y2])
@@ -620,11 +639,13 @@ def game_screen():
     for i in range(HEIGHT // 50 + 1):
         Border(sprite, 200, i * 50, WIDTH, 2)
     elem = None
-    wire = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect(
-            (WIDTH - 65, 5), (60, 70)), text='',
-        manager=manage, object_id='wire')
+    wire = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((WIDTH - 65, 5), (60, 70)),
+                                        text='', manager=manage, object_id='wire')
+    start_stop = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((WIDTH - 55, 75), (52, 52)),
+                                              text='', manager=manage, object_id='start')
     wires = None
+    start_list = {False: 'start', True: 'stop'}
+    play = False
     while run:
         time_delta = clock.tick(60) / 1000
         for event in pygame.event.get():
@@ -648,6 +669,12 @@ def game_screen():
                     elif event.ui_element == wire:
                         wires = Wire(wire_sprites)
                         all_sprites.add(wires)
+                    elif event.ui_element == start_stop:
+                        start_stop.kill()
+                        play = not play
+                        start_stop = pygame_gui.elements.UIButton(
+                            relative_rect=pygame.Rect((WIDTH - 55, 75), (52, 52)), text='',
+                            manager=manage, object_id=start_list[play])
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     pass
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
