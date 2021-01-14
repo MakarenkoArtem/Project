@@ -246,6 +246,7 @@ class Info(QDialog, design_pyqt5.Ui_Dialog):  # Класс виджета инф
         self.image_off, self.image_on = image_text
         self.lineEdit.setText(title)
         self.doubleSpinBox.setValue(voltage)
+        print(health)
         self.spinBox.setValue(health)
         self.t = True
         self.textEdit.setText(text)
@@ -364,10 +365,12 @@ class Wire(pygame.sprite.Sprite):
         self.down = False
 
     def check(self, port):
-        for i in range(2):
-            if self.ports[i] != port:
-                self.ports[i].list = self.list
-                self.ports[i].check()
+        i = 0
+        if self.ports[i] == port:
+            i = 1
+        self.ports[i].list = self.list
+        self.ports[i].sign = self.sign
+        self.ports[i].check()
 
     def down_event(self, pos, sprite):
         if pygame.sprite.collide_mask(self, sprite):
@@ -473,11 +476,12 @@ class Port(pygame.sprite.Sprite):  # класс портов для соедин
         if bool:
             for i in self.users:
                 i.list = self.list
+                i.sign = self.sign
                 i.check(self)
         else:
             self.master.list = self.list
+            self.master.sign = self.sign
             self.master.check(port=self)
-        print("Port:", self.list)
 
     def killed(self):
         for i in self.users:
@@ -542,19 +546,16 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         self.dx, self.dy = 0, 0
 
     def check(self, bool=False, port=None):
+        i = 0
         if bool:
             self.list = []
             self.sign = self
-        elif self.sign != self:
-            i = 0
-            if self.ports[0] == port:
+        if self.sign != self or bool:
+            if self.ports[i] == port:
                 i = 1
-            self.list.append(self)
-            self.ports[i].list = self.list
+            self.ports[i].list = self.list + [self]
             self.ports[i].sign = self.sign
-            self.ports[i].check()
-        print("Элемент:", self.list)
-
+            self.ports[i].check(True)
 
     def show(self):
         app = QApplication(sys.argv)
@@ -567,9 +568,8 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         app.exit()
 
     def down_event(self, pos, sprite):
-        if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[
-            1] <= pos[1] <= self.rect[1] + self.rect[
-            3]:
+        if self.rect[0] <= pos[0] <= self.rect[0] + self.rect[2] and self.rect[1] <= pos[1] <= \
+                self.rect[1] + self.rect[3]:
             self.down = True
             self.dx = pos[0] - self.rect[0]
             self.dy = pos[1] - self.rect[1]
@@ -592,6 +592,58 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         self.ports[1].killed()
         self.kill()
 
+    def power(self, voltage, all_sprites):
+        if self.voltage / 2 < voltage:
+            self.image = self.image_on
+            if self.voltage < voltage:
+                self.health -= (voltage + 0.5) // self.voltage
+        else:
+            self.image = self.image_off
+        if self.health <= 0:
+            self.health = 0
+            create_particles(
+                (self.rect.x + self.rect.width // 2, self.rect.y + self.rect.height // 2), all_sprites)
+
+
+def create_particles(position, all_sprites):
+    # количество создаваемых частиц
+    particle_count = 20
+    # возможные скорости
+    numbers = range(-5, 6)
+    for _ in range(particle_count):
+        Particle(all_sprites, position, random.choice(numbers), random.choice(numbers))
+
+
+class Particle(pygame.sprite.Sprite):
+    # сгенерируем частицы разного размера
+    fire = [load_image("data/star.png")]
+    for scale in (5, 10, 20):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, all_sprites, pos, dx, dy):
+        super().__init__(all_sprites)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+
+        # у каждой частицы своя скорость — это вектор
+        self.velocity = [dx, dy]
+        # и свои координаты
+        self.rect.x, self.rect.y = pos
+
+        # гравитация будет одинаковой (значение константы)
+        self.gravity = 10
+
+    def update(self):
+        # применяем гравитационный эффект:
+        # движение с ускорением под действием гравитации
+        self.velocity[1] += self.gravity
+        # перемещаем частицу
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        # убиваем, если частица ушла за экран
+        if self.rect.y > HEIGHT + 100:
+            self.kill()
+
 
 class Allsprites(pygame.sprite.Group):
     def killed(self, trash):
@@ -604,12 +656,9 @@ class Allsprites(pygame.sprite.Group):
 
     def show(self, pos):
         point = Check(pos, self)
-        print("=" * 50)
         for sprite in self.sprites():
             if isinstance(sprite, Element) or isinstance(sprite, Wire):
-                print(sprite.rect, point.rect)
                 if sprite.down_event(pos, point):
-                    print(1)
                     sprite.show()
                     sprite.down = False
                     break
@@ -620,16 +669,26 @@ class Elementsprites(pygame.sprite.Group):
     def down(self, pos):
         point = Check(pos, self)
         for sprite in self.sprites():
-            if sprite.down_event(pos, point):
+            if not isinstance(sprite, Particle) and sprite.down_event(pos, point):
                 point.kill()
                 return sprite
 
     def check(self):
         for sprite in self.sprites():
             if isinstance(sprite, Element) and sprite.type == 'Источники питания с постоянным током':
-                print(sprite.type)
                 sprite.check(True)
-                print(sprite.list)
+                for i in sprite.list:
+                    if not i.health:
+                        self.stop()
+                        sprite.list = []
+                        break
+                for i in sprite.list:
+                    i.power(sprite.voltage, self)
+
+    def stop(self):
+        for sprite in self.sprites():
+            if isinstance(sprite, Element):
+                sprite.image = sprite.image_off
 
 
 class Border(pygame.sprite.Sprite):  # строго вертикальный или строго горизонтальный отрезок
@@ -667,9 +726,8 @@ def game_screen():
     element_sprites = Elementsprites()
     port_sprites = Portsprites()
     wire_sprites = Wiresprites()
-    basket = AnimatedSprite(element_sprites, load_image("data/basket.png"), 2,
-                            1,
-                            WIDTH - 60, HEIGHT - 65)
+    basket = AnimatedSprite(element_sprites, load_image("data/basket.png"), 2, 1, WIDTH - 60,
+                            HEIGHT - 65)
     all_sprites.add(basket)
     sprite = pygame.sprite.Group()
     for i in range(WIDTH // 50 + 1):
@@ -710,18 +768,20 @@ def game_screen():
                     elif event.ui_element == start_stop:
                         start_stop.kill()
                         play = not play
-                        print(play)
                         start_stop = pygame_gui.elements.UIButton(
                             relative_rect=pygame.Rect((WIDTH - 55, 75), (52, 52)), text='',
                             manager=manage, object_id=start_list[play])
+                        if not play:
+                            element_sprites.stop()
                 elif event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                     pass
                 elif event.user_type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                     change_group(event.text, manage)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 3:
+                print(event.pos)
+                if event.button == 3 and not play:
                     all_sprites.show(event.pos)
-                else:
+                elif not play:
                     elem = element_sprites.down(event.pos)
                     if elem is not None:
                         basket.down = True
@@ -745,7 +805,6 @@ def game_screen():
         else:
             port_sprites.paint(True)
         if play:
-            print(1234)
             element_sprites.check()
         manage.update(time_delta)
         window_surface.blit(background, (0, 0))
