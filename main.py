@@ -6,7 +6,6 @@ from work_with_bd import *
 import random
 import math
 from enum import Enum
-sys.setrecursionlimit(5000)
 
 try:
     from PyQt5.QtWidgets import QApplication, QDialog
@@ -44,6 +43,8 @@ try:
     import design_pyqt5
 except ModuleNotFoundError:
     pass
+
+sys.setrecursionlimit(5000)
 
 
 class GameStates(Enum):
@@ -272,6 +273,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sprites, sheet, columns, rows, x, y):
         super().__init__(sprites)
         self.frames = []
+        self.type = "Animated"
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
@@ -528,6 +530,8 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         self.image_on = load_image("data/images/" + self.image_on)
         self.image = self.image_off = load_image(
             "data/images/" + self.image_off)
+        if self.type == 'Кнопки':
+            self.image = self.image_on
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x, self.rect.y = random.randrange(200,
@@ -545,13 +549,19 @@ class Element(pygame.sprite.Sprite):  # класс элементов
                           Port(args[8], group_ports, self)]
         self.down = False
         self.dx, self.dy = 0, 0
+        self.work = True
+    def button(self):
+        if self.work:
+            self.image = self.image_on
+        else:
+            self.image = self.image_off
 
     def check(self, bool=False, port=None):
         i = 0
         if bool:
-            self.list = [self]
+            self.list = []
             self.sign = self
-        if self.sign != self or bool:
+        if self.sign != self or bool and self.work:
             if self.ports[i] == port:
                 i = 1
             self.ports[i].list = self.list + [self]
@@ -560,13 +570,13 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         if self.sign == self and not bool:
             if self.ports[0] == port:  # если провод вернулся в начало
                 self.list = []
-        print(self.list)
 
     def show(self):
         app = QApplication(sys.argv)
-        info = Info(self.type, self.title, self.voltage, self.image_text,
-                    self.health,
-                    self.text)
+        health = self.health
+        if self.type == 'Кнопки' and not self.health:
+           health = 100
+        info = Info(self.type, self.title, self.voltage, self.image_text, health, self.text)
         info.exec_()  # Вызов класс виджета информации о программе
         self.voltage, self.title = info.doubleSpinBox.value(), info.lineEdit.text()
         self.health, self.text = info.spinBox.value(), info.textEdit.toPlainText()
@@ -598,6 +608,9 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         self.kill()
 
     def power(self, voltage, all_sprites):
+        if self.type == 'Кнопки':
+            self.button()
+            return
         if self.voltage / 2 < voltage:
             self.image = self.image_on
             if self.voltage < voltage:
@@ -606,9 +619,8 @@ class Element(pygame.sprite.Sprite):  # класс элементов
             self.image = self.image_off
         if self.health <= 0:
             self.health = 0
-            create_particles(
-                (self.rect.x + self.rect.width // 2, self.rect.y + self.rect.height // 2),
-                all_sprites)
+            create_particles((self.rect.x + self.rect.width // 2, self.rect.y + self.rect.height // 2),
+                    all_sprites)
 
 
 def create_particles(position, all_sprites):
@@ -684,20 +696,22 @@ class Elementsprites(pygame.sprite.Group):
             if isinstance(sprite, Element) and sprite.type == 'Источники питания с постоянным током':
                 sprite.check(True)
                 for i in sprite.list:
-                    if not i.health:
+                    if not i.health or not i.work:
                         self.stop()
                         sprite.list = []
                         break
                 voltage = 0
-                n = 0
+                d = []
+                for i in range(len(sprite.list)):
+                    if sprite.list[i].type == "Источники питания с постоянным током":
+                        voltage += sprite.list[i].voltage
+                        d.append(i)
+                k = 0
+                for i in d:
+                    sprite.list.pop(i - k)
+                    k += 1
                 for i in sprite.list:
-                    print(i.type)
-                    if i.type == "Источники питания с постоянным током":
-                        voltage += i.voltage
-                        n += 1
-                print(voltage, len(sprite.list), n)
-                for i in sprite.list:
-                    i.power(voltage // (len(sprite.list) - n), self)
+                    i.power(voltage // len(sprite.list), self)
 
     def stop(self):
         for sprite in self.sprites():
@@ -792,11 +806,15 @@ def game_screen():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3 and not play:
                     all_sprites.show(event.pos)
-                elif not play:
+                else:
                     elem = element_sprites.down(event.pos)
                     if elem is not None:
+                        if elem.type == 'Кнопки':
+                            elem.work = not elem.work
+                            elem.button()
+                    if elem is not None and not play:
                         basket.down = True
-                    if wires is not None:
+                    if wires is not None and not play:
                         port = port_sprites.down(event.pos)
                         if port is not None:
                             wires.point(port)
