@@ -86,8 +86,7 @@ JSON = {"wire": {
                 "data/stop.png"
         }
     }
-}
-}
+}} # прописываем постоянные кнопки-картинки
 
 
 def load_image(name, colorkey=None):
@@ -111,7 +110,7 @@ def terminate():
     sys.exit()
 
 
-def loading(n):
+def loading(n): # метод подготовки и проверки
     text = None
     global lamp, z, data
     if n == -1:
@@ -155,7 +154,7 @@ def loading(n):
                                     "path": f"data/images/{elements[i]}"
                                 }
                             }
-                        }
+                        } # прописываем временные кнопки-картинки
             with open("data/theme.json", "w") as write_file:
                 json.dump(JSON, write_file)
         else:
@@ -170,7 +169,7 @@ def loading(n):
         try:
             from PyQt5.QtWidgets import QApplication, QDialog
         except ModuleNotFoundError:
-            text = "Нет файла для работы с графическим интерфейсом"
+            text = "Нет модуля для работы с графическим интерфейсом"
     elif n == 5:
         try:
             import design_pyqt5
@@ -248,7 +247,6 @@ class Info(QDialog, design_pyqt5.Ui_Dialog):  # Класс виджета инф
         self.image_off, self.image_on = image_text
         self.lineEdit.setText(title)
         self.doubleSpinBox.setValue(voltage)
-        print(health)
         self.spinBox.setValue(health)
         self.t = True
         self.textEdit.setText(text)
@@ -329,7 +327,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
 buttons = {}
 
 
-def change_group(group, manage):
+def change_group(group, manage):  # изменение группы кнопок
     global buttons, data
     for i in buttons.keys():
         i.kill()
@@ -341,7 +339,7 @@ def change_group(group, manage):
             text='', manager=manage, object_id=group + "_" + str(i))] = elements[i]
 
 
-class Check(pygame.sprite.Sprite):
+class Check(pygame.sprite.Sprite):  # спрайт для проверки соединения
     def __init__(self, pos, group):
         super().__init__(group)
         self.image = pygame.Surface([1, 1])
@@ -367,7 +365,7 @@ class Wire(pygame.sprite.Sprite):
         self.image.set_colorkey('#000000')
         self.down = False
 
-    def check(self, port):
+    def check(self, port):  # проверка соединения
         i = 0
         if self.ports[i] == port:
             i = 1
@@ -475,7 +473,7 @@ class Port(pygame.sprite.Sprite):  # класс портов для соедин
         self.users = []
         self.paint = False
 
-    def check(self, bool=False):
+    def check(self, bool=False):  # проверка соединения
         if bool:
             for i in self.users:
                 i.list = self.list
@@ -525,11 +523,9 @@ class Element(pygame.sprite.Sprite):  # класс элементов
             self.text = ''
         if self.health is None:
             self.health = 100
-        self.image_text = ["data/images/" + self.image_on,
-                           "data/images/" + self.image_off]
+        self.image_text = ["data/images/" + self.image_on, "data/images/" + self.image_off]
         self.image_on = load_image("data/images/" + self.image_on)
-        self.image = self.image_off = load_image(
-            "data/images/" + self.image_off)
+        self.image = self.image_off = load_image("data/images/" + self.image_off)
         if self.type == 'Кнопки':
             self.image = self.image_on
         self.rect = self.image.get_rect()
@@ -550,13 +546,14 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         self.down = False
         self.dx, self.dy = 0, 0
         self.work = True
+
     def button(self):
         if self.work:
             self.image = self.image_on
         else:
             self.image = self.image_off
 
-    def check(self, bool=False, port=None):
+    def check(self, bool=False, port=None):  # проверка соединения
         i = 0
         if bool:
             self.list = []
@@ -575,7 +572,7 @@ class Element(pygame.sprite.Sprite):  # класс элементов
         app = QApplication(sys.argv)
         health = self.health
         if self.type == 'Кнопки' and not self.health:
-           health = 100
+            health = 100
         info = Info(self.type, self.title, self.voltage, self.image_text, health, self.text)
         info.exec_()  # Вызов класс виджета информации о программе
         self.voltage, self.title = info.doubleSpinBox.value(), info.lineEdit.text()
@@ -619,13 +616,14 @@ class Element(pygame.sprite.Sprite):  # класс элементов
             self.image = self.image_off
         if self.health <= 0:
             self.health = 0
-            create_particles((self.rect.x + self.rect.width // 2, self.rect.y + self.rect.height // 2),
-                    all_sprites)
+            create_particles(
+                (self.rect.x + self.rect.width // 2, self.rect.y + self.rect.height // 2),
+                all_sprites)
 
 
 def create_particles(position, all_sprites):
     # количество создаваемых частиц
-    particle_count = 17
+    particle_count = random.randrange(15, 25)
     # возможные скорости
     numbers = range(-5, 6)
     for _ in range(particle_count):
@@ -664,7 +662,7 @@ class Particle(pygame.sprite.Sprite):
 
 
 class Allsprites(pygame.sprite.Group):
-    def killed(self, trash):
+    def killed(self, trash): # метод удаления элемента
         for sprite in self.sprites():
             if pygame.sprite.collide_mask(sprite, trash) and sprite != trash:
                 sprite.killed()
@@ -752,8 +750,7 @@ def game_screen():
     element_sprites = Elementsprites()
     port_sprites = Portsprites()
     wire_sprites = Wiresprites()
-    basket = AnimatedSprite(element_sprites, load_image("data/basket.png"), 2, 1, WIDTH - 60,
-                            HEIGHT - 65)
+    basket = AnimatedSprite(element_sprites, load_image("data/basket.png"), 2, 1, WIDTH - 60, HEIGHT - 65)
     all_sprites.add(basket)
     sprite = pygame.sprite.Group()
     for i in range(WIDTH // 50 + 1):
