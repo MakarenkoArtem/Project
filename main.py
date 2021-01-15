@@ -6,6 +6,7 @@ from work_with_bd import *
 import random
 import math
 from enum import Enum
+sys.setrecursionlimit(5000)
 
 try:
     from PyQt5.QtWidgets import QApplication, QDialog
@@ -548,7 +549,7 @@ class Element(pygame.sprite.Sprite):  # класс элементов
     def check(self, bool=False, port=None):
         i = 0
         if bool:
-            self.list = []
+            self.list = [self]
             self.sign = self
         if self.sign != self or bool:
             if self.ports[i] == port:
@@ -687,8 +688,16 @@ class Elementsprites(pygame.sprite.Group):
                         self.stop()
                         sprite.list = []
                         break
+                voltage = 0
+                n = 0
                 for i in sprite.list:
-                    i.power(sprite.voltage // (len(sprite.list) - 1), self)
+                    print(i.type)
+                    if i.type == "Источники питания с постоянным током":
+                        voltage += i.voltage
+                        n += 1
+                print(voltage, len(sprite.list), n)
+                for i in sprite.list:
+                    i.power(voltage // (len(sprite.list) - n), self)
 
     def stop(self):
         for sprite in self.sprites():
